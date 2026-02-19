@@ -100,89 +100,86 @@ class _DoctorNavBarState extends State<_DoctorNavBar> {
   @override
   Widget build(BuildContext context) {
     final bottomPad = MediaQuery.paddingOf(context).bottom;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const barHeight = 64.0;
-        final contentHeight = (constraints.maxHeight - bottomPad - 8).clamp(barHeight, barHeight);
-        return Padding(
-          padding: EdgeInsets.only(left: 14, right: 14, bottom: bottomPad + 10),
-          child: ClipRRect(
+    const barHeight = 64.0;
+    const contentHeight = barHeight;
+    
+    return Padding(
+      padding: EdgeInsets.only(left: 14, right: 14, bottom: bottomPad + 10),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Container(
+          height: contentHeight,
+          decoration: BoxDecoration(
+            color: Colors.white,
             borderRadius: BorderRadius.circular(28),
-            child: Container(
-              height: contentHeight,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 12,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 2),
               ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                child: LayoutBuilder(
-                  builder: (context, innerConstraints) {
-                    final itemWidth = innerConstraints.maxWidth / 5;
-                    const circleSize = 44.0;
-                    final leftOffset = (itemWidth - circleSize) / 2;
-                    final innerHeight = contentHeight - 12;
-                    final circleTop = (innerHeight - circleSize) / 2;
-                    return Stack(
-                      alignment: Alignment.centerLeft,
-                      children: [
-                        TweenAnimationBuilder<double>(
-                          tween: Tween(
-                            begin: _fromIndex.toDouble(),
-                            end: widget.currentIndex.toDouble(),
-                          ),
-                          duration: const Duration(milliseconds: 280),
-                          curve: Curves.easeOutCubic,
-                          builder: (context, value, child) {
-                            return Positioned(
-                              left: value * itemWidth + leftOffset,
-                              top: circleTop,
-                              width: circleSize,
-                              height: circleSize,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: _maroon,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: _maroon.withValues(alpha: 0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final itemWidth = constraints.maxWidth / 5;
+                const circleSize = 44.0;
+                final leftOffset = (itemWidth - circleSize) / 2;
+                const innerHeight = contentHeight - 12;
+                const circleTop = (innerHeight - circleSize) / 2;
+                return Stack(
+                  alignment: Alignment.centerLeft,
+                  children: [
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(
+                        begin: _fromIndex.toDouble(),
+                        end: widget.currentIndex.toDouble(),
+                      ),
+                      duration: const Duration(milliseconds: 280),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, child) {
+                        return Positioned(
+                          left: value * itemWidth + leftOffset,
+                          top: circleTop,
+                          width: circleSize,
+                          height: circleSize,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: _maroon,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _maroon.withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                        Row(
-                          children: List.generate(5, (i) {
-                            return Expanded(
-                              child: _DoctorNavItem(
-                                icon: _icons[i],
-                                label: _labels[i],
-                                isSelected: widget.currentIndex == i,
-                                onTap: () => widget.onTap(i),
-                              ),
-                            );
-                          }),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    Row(
+                      children: List.generate(5, (i) {
+                        return Expanded(
+                          child: _DoctorNavItem(
+                            icon: _icons[i],
+                            label: _labels[i],
+                            isSelected: widget.currentIndex == i,
+                            onTap: () => widget.onTap(i),
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
