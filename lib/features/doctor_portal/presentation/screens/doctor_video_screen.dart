@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'upload_video_screen.dart';
+
 const _maroon = Color(0xFF6C102C);
 const _bg = Color(0xFFF8F7F5);
 const _cardBg = Color(0xFFFFFFFF);
@@ -45,10 +47,9 @@ class DoctorVideoScreen extends StatelessWidget {
                   ),
                   GestureDetector(
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Upload Video'),
-                          behavior: SnackBarBehavior.floating,
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const UploadVideoScreen(),
                         ),
                       );
                     },

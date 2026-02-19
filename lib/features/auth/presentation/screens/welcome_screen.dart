@@ -19,11 +19,10 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   bool _rememberMe = false;
   bool _obscurePassword = true;
-  final _emailController = TextEditingController();
+  final _emailController = TextEditingController(text: 'hello@masika.ai');
   final _passwordController = TextEditingController();
 
   int _tabIndex = 0;
-  double _tabDragOffset = 0;
   bool _isNavigating = false;
 
   // Design reference: deep red/maroon #8C1D3F, white cards, rounded corners throughout
@@ -86,7 +85,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         _isNavigating = false;
         setState(() {
           _tabIndex = 0;
-          _tabDragOffset = 0;
         });
       }
     });
@@ -109,16 +107,21 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bottomBg,
-      body: Column(
+      body: Stack(
         children: [
+          // Background gradient section
           _buildTopSection(context),
-          Expanded(
+          // Main content with scroll
+          SafeArea(
+            bottom: false,
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Column(
                 children: [
+                  const SizedBox(height: 180), // Space for header content
                   _buildLoginCard(context),
                   _buildHealthcareButton(context),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -131,236 +134,162 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   Widget _buildTopSection(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: _maroon,
+      height: 320,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF9C2848),
+            Color(0xFF8C1D3F),
+          ],
+        ),
+      ),
       child: SafeArea(
         bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 32, 24, 48),
-          child: Column(
-            children: [
-              const SizedBox(height: 16),
-              // Frosted glass circle with female symbol
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: _white.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _white.withValues(alpha: 0.35),
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+        child: Column(
+          children: [
+            const SizedBox(height: 40),
+            // Frosted glass circle with female symbol
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: _white.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: _white.withValues(alpha: 0.35),
+                  width: 1,
                 ),
-                child: const Center(
-                  child: Text(
-                    '♀',
-                    style: TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.w400,
-                      color: _white,
-                    ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
-                ),
+                ],
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'Masika AI',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
+              child: const Center(
+                child: Icon(
+                  Icons.female,
+                  size: 40,
                   color: _white,
-                  letterSpacing: -0.5,
                 ),
               ),
-              const SizedBox(height: 6),
-              Text(
-                'Empowering Women\'s Wellness',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
-                  color: _white.withValues(alpha: 0.95),
-                ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Masika AI',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                color: _white,
+                letterSpacing: -0.5,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              "Empowering Women's Wellness",
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w400,
+                color: _white.withValues(alpha: 0.95),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildLoginCard(BuildContext context) {
-    return Transform.translate(
-      offset: const Offset(0, -28),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-        padding: const EdgeInsets.fromLTRB(24, 22, 24, 30),
-        decoration: BoxDecoration(
-          color: _white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(_cardRadiusTop),
-            topRight: Radius.circular(_cardRadiusTop),
-            bottomLeft: Radius.circular(_cardRadiusBottom),
-            bottomRight: Radius.circular(_cardRadiusBottom),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(24, 28, 24, 30),
+      decoration: BoxDecoration(
+        color: _white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(_cardRadiusTop),
+          topRight: Radius.circular(_cardRadiusTop),
+          bottomLeft: Radius.circular(_cardRadiusBottom),
+          bottomRight: Radius.circular(_cardRadiusBottom),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 6),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 24,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildTabs(),
-            const SizedBox(height: 26),
-            _buildLoginForm(),
-          ],
-        ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildTabs(),
+          const SizedBox(height: 28),
+          _buildLoginForm(),
+        ],
       ),
     );
   }
 
   Widget _buildTabs() {
-    const pillPadding = EdgeInsets.symmetric(horizontal: 28, vertical: 12);
-    const gap = 20.0;
-    final loginWidth = _measureTabWidth('Login', pillPadding);
-    final pillWidth = loginWidth;
-    final registerWidth = _measureTabWidth('Register', pillPadding);
-    final maxOffset = pillWidth + gap;
-    final pillX = (_tabIndex * (pillWidth + gap)).toDouble() + _tabDragOffset.clamp(-maxOffset, maxOffset);
-    final pillOverLogin = pillX < pillWidth + gap * 0.5;
-    final pillOverRegister = !pillOverLogin;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onHorizontalDragUpdate: (d) {
-        setState(() {
-          if (_tabIndex == 0) {
-            _tabDragOffset = (_tabDragOffset + d.delta.dx).clamp(0.0, maxOffset);
-          } else {
-            _tabDragOffset = (_tabDragOffset + d.delta.dx).clamp(-maxOffset, 0.0);
-          }
-        });
-      },
-      onHorizontalDragEnd: (_) {
-        final threshold = maxOffset * 0.45;
-        if (_tabIndex == 0 && _tabDragOffset >= threshold) {
-          setState(() {
-            _tabDragOffset = 0;
-            _tabIndex = 1;
-          });
-          _openRegisterScreen();
-        } else if (_tabIndex == 1 && _tabDragOffset <= -threshold) {
-          setState(() {
-            _tabDragOffset = 0;
-            _tabIndex = 0;
-          });
-        } else {
-          setState(() => _tabDragOffset = 0);
-        }
-      },
-      child: SizedBox(
-        height: 48,
-        child: Stack(
-          alignment: Alignment.centerLeft,
-          children: [
-            Positioned(
-              left: pillX,
-              top: 4,
-              child: IgnorePointer(
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
-                  curve: Curves.easeOutCubic,
-                  width: pillWidth,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: _maroon,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _maroon.withValues(alpha: 0.35),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: _inputBg,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _tabIndex = 0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: _tabIndex == 0 ? _maroon : Colors.transparent,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Center(
+                  child: Text(
+                    'Login',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: _tabIndex == 0 ? _white : _registerInactive,
+                    ),
                   ),
                 ),
               ),
             ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    if (_tabIndex == 1) setState(() { _tabIndex = 0; _tabDragOffset = 0; });
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: SizedBox(
-                    width: pillWidth,
-                    height: 48,
-                    child: Center(
-                      child: Text(
-                        'Login',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: pillOverLogin ? _white : _registerInactive,
-                        ),
-                      ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                setState(() => _tabIndex = 1);
+                _openRegisterScreen();
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: _tabIndex == 1 ? _maroon : Colors.transparent,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Center(
+                  child: Text(
+                    'Register',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: _tabIndex == 1 ? _white : _registerInactive,
                     ),
                   ),
                 ),
-                const SizedBox(width: gap),
-                GestureDetector(
-                  onTap: () {
-                    if (_tabIndex == 0) {
-                      setState(() { _tabIndex = 1; _tabDragOffset = 0; });
-                      _openRegisterScreen();
-                    }
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: SizedBox(
-                    width: registerWidth,
-                    height: 48,
-                    child: Center(
-                      child: Text(
-                        'Register',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: pillOverRegister ? _white : _registerInactive,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
-  }
-
-  double _measureTabWidth(String text, EdgeInsets padding) {
-    final span = TextSpan(
-      text: text,
-      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-    );
-    final tp = TextPainter(
-      text: span,
-      textDirection: TextDirection.ltr,
-    )..layout();
-    return tp.width + padding.horizontal;
   }
 
   Widget _buildLoginForm() {
@@ -436,11 +365,34 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   }
 
   Widget _buildEmailField() {
-    return _buildInput(
-      controller: _emailController,
-      hint: 'hello@masika.ai',
-      icon: Icons.mail_outline_rounded,
-      keyboardType: TextInputType.emailAddress,
+    return Container(
+      decoration: BoxDecoration(
+        color: _inputBg,
+        borderRadius: BorderRadius.circular(_inputRadius),
+      ),
+      child: TextField(
+        controller: _emailController,
+        keyboardType: TextInputType.emailAddress,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
+          color: _labelGray,
+        ),
+        decoration: InputDecoration(
+          hintText: 'hello@masika.ai',
+          hintStyle: TextStyle(
+            fontSize: 15,
+            color: _labelGray.withValues(alpha: 0.6),
+            fontWeight: FontWeight.w400,
+          ),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.only(left: 14, right: 10),
+            child: Icon(Icons.email_outlined, color: _iconMuted, size: 22),
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+      ),
     );
   }
 
@@ -457,6 +409,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           fontSize: 15,
           fontWeight: FontWeight.w400,
           color: _labelGray,
+          letterSpacing: 2,
         ),
         decoration: InputDecoration(
           hintText: '••••••••',
@@ -487,43 +440,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     );
   }
 
-  Widget _buildInput({
-    TextEditingController? controller,
-    required String hint,
-    required IconData icon,
-    TextInputType? keyboardType,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: _inputBg,
-        borderRadius: BorderRadius.circular(_inputRadius),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w400,
-          color: _labelGray,
-        ),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(
-            fontSize: 15,
-            color: _iconMuted,
-            fontWeight: FontWeight.w400,
-          ),
-          prefixIcon: Padding(
-            padding: const EdgeInsets.only(left: 14, right: 10),
-            child: Icon(icon, color: _iconMuted, size: 22),
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        ),
-      ),
-    );
-  }
-
   Widget _buildLoginButton() {
     return SizedBox(
       height: 54,
@@ -546,14 +462,11 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               'Login',
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(width: 10),
-            Transform.rotate(
-              angle: -0.15,
-              child: const Icon(Icons.arrow_forward_rounded, size: 22),
-            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_forward, size: 20),
           ],
         ),
       ),
@@ -562,7 +475,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
   Widget _buildHealthcareButton(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Material(
         color: _white,
         borderRadius: BorderRadius.circular(_healthcareCardRadius),
@@ -602,9 +515,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     ),
                     alignment: Alignment.center,
                     child: const Icon(
-                      Icons.medical_services_rounded,
+                      Icons.favorite,
                       color: _white,
-                      size: 26,
+                      size: 24,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -612,7 +525,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'HEALTHCARE PROFESSIONAL?',
                           style: TextStyle(
                             fontSize: 11,
@@ -634,7 +547,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     ),
                   ),
                   Icon(
-                    Icons.arrow_forward_ios_rounded,
+                    Icons.arrow_forward_ios,
                     color: _healthcareGray,
                     size: 16,
                   ),
@@ -646,4 +559,5 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       ),
     );
   }
+
 }

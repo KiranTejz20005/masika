@@ -11,8 +11,6 @@ const _maroon = Color(0xFF8D2D3B);
 const _bg = Color(0xFFFAF8F9);
 const _cardGray = Color(0xFF4B4B4B);
 
-const _defaultThumb = 'https://images.unsplash.com/photo-1549576490-b0b4831ef60a?w=500&h=320&fit=crop';
-
 class _VideoItem {
   final String id;
   final String thumb;

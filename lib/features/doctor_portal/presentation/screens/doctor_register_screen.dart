@@ -6,15 +6,8 @@ import '../../../../shared/providers/app_providers.dart';
 import 'doctor_shell.dart';
 import 'doctor_login_screen.dart';
 
-// Reference: light off-white bg, white rounded card for form, dark red accent
-const _maroon = Color(0xFF6C102C);
-const _bg = Color(0xFFF5F5F5);
-const _cardBg = Color(0xFFFFFFFF);
-const _labelGray = Color(0xFF9E9E9E);
-const _inputBg = Color(0xFFF0EFEF);
-const _inputRadius = 14.0;
-const _cardRadius = 24.0;
-
+/// Pixel-perfect Doctor Registration Screen
+/// Clean design with sections for Personal Details and Professional Credentials
 class DoctorRegisterScreen extends ConsumerStatefulWidget {
   const DoctorRegisterScreen({super.key});
 
@@ -23,8 +16,7 @@ class DoctorRegisterScreen extends ConsumerStatefulWidget {
       _DoctorRegisterScreenState();
 }
 
-class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen>
-    with TickerProviderStateMixin {
+class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
@@ -38,51 +30,19 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen>
   bool _agreedToTerms = false;
   bool _isSubmitting = false;
 
-  late AnimationController _staggerController;
-  late Animation<double> _personalAnim;
-  late Animation<double> _proAnim;
-  late Animation<double> _uploadAnim;
-  late Animation<double> _termsAnim;
-  late Animation<double> _buttonAnim;
-  late Animation<double> _footerAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _staggerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-    _personalAnim = CurvedAnimation(
-      parent: _staggerController,
-      curve: const Interval(0.0, 0.28, curve: Curves.easeOutCubic),
-    );
-    _proAnim = CurvedAnimation(
-      parent: _staggerController,
-      curve: const Interval(0.18, 0.48, curve: Curves.easeOutCubic),
-    );
-    _uploadAnim = CurvedAnimation(
-      parent: _staggerController,
-      curve: const Interval(0.38, 0.65, curve: Curves.easeOutCubic),
-    );
-    _termsAnim = CurvedAnimation(
-      parent: _staggerController,
-      curve: const Interval(0.55, 0.78, curve: Curves.easeOutCubic),
-    );
-    _buttonAnim = CurvedAnimation(
-      parent: _staggerController,
-      curve: const Interval(0.72, 0.92, curve: Curves.easeOutCubic),
-    );
-    _footerAnim = CurvedAnimation(
-      parent: _staggerController,
-      curve: const Interval(0.85, 1.0, curve: Curves.easeOutCubic),
-    );
-    _staggerController.forward();
-  }
+  // Design colors matching reference
+  static const _maroon = Color(0xFF8C1D3F);
+  static const _white = Color(0xFFFFFFFF);
+  static const _bg = Color(0xFFF8F8F8);
+  static const _labelGray = Color(0xFF9E9E9E);
+  static const _textGray = Color(0xFF6B6B6B);
+  static const _inputBg = Color(0xFFF5F5F5);
+  static const _iconGray = Color(0xFF9E9E9E);
+  static const _cardRadius = 24.0;
+  static const _inputRadius = 12.0;
 
   @override
   void dispose() {
-    _staggerController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
     _otpController.dispose();
@@ -104,7 +64,6 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen>
       );
       return;
     }
-    setState(() {});
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('OTP sent (demo)'),
@@ -126,7 +85,7 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen>
     setState(() => _otpVerified = true);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Verified'),
+        content: Text('OTP Verified'),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -190,7 +149,7 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildHeader(context),
+            _buildHeader(),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -198,7 +157,6 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 8),
                     _buildTitleSubtitle(),
                     const SizedBox(height: 20),
                     _buildFormCard(),
@@ -214,25 +172,32 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen>
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: Row(
         children: [
-          Material(
-            color: const Color(0xFFEEEEEE),
-            borderRadius: BorderRadius.circular(24),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: _white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: InkWell(
               onTap: () => Navigator.of(context).pop(),
-              borderRadius: BorderRadius.circular(24),
-              child: const SizedBox(
-                width: 48,
-                height: 48,
-                child: Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: _maroon,
-                  size: 20,
-                ),
+              borderRadius: BorderRadius.circular(20),
+              child: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: _maroon,
+                size: 18,
               ),
             ),
           ),
@@ -248,7 +213,7 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen>
         const Text(
           'Join Masika AI',
           style: TextStyle(
-            fontSize: 26,
+            fontSize: 28,
             fontWeight: FontWeight.w700,
             color: _maroon,
           ),
@@ -257,8 +222,9 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen>
         Text(
           'Create your professional doctor profile',
           style: TextStyle(
-            fontSize: 14,
-            color: _labelGray,
+            fontSize: 15,
+            color: _textGray,
+            fontWeight: FontWeight.w400,
           ),
         ),
       ],
@@ -269,362 +235,251 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen>
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
       decoration: BoxDecoration(
-        color: _cardBg,
+        color: _white,
         borderRadius: BorderRadius.circular(_cardRadius),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 20,
-            offset: const Offset(0, 6),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _StaggerSlide(
-            animation: _personalAnim,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _sectionLabel('PERSONAL DETAILS'),
-                const SizedBox(height: 12),
-                _buildInput(
-                  controller: _nameController,
-                  hint: 'Full Name',
-                  icon: Icons.person_outline_rounded,
+          // Personal Details Section
+          _buildSectionLabel('PERSONAL DETAILS'),
+          const SizedBox(height: 16),
+          _buildInput(
+            controller: _nameController,
+            hint: 'Full Name',
+            icon: Icons.person_outline,
+          ),
+          const SizedBox(height: 12),
+          _buildPhoneWithOtp(),
+          const SizedBox(height: 12),
+          _buildOtpWithVerify(),
+          const SizedBox(height: 24),
+          
+          // Professional Credentials Section
+          _buildSectionLabel('PROFESSIONAL CREDENTIALS'),
+          const SizedBox(height: 16),
+          _buildSpecializationDropdown(),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildInput(
+                  controller: _expController,
+                  hint: 'Exp (Years)',
+                  icon: Icons.trending_up,
+                  keyboardType: TextInputType.number,
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: _buildInput(
-                        controller: _phoneController,
-                        hint: 'Phone Number',
-                        icon: Icons.phone_android_rounded,
-                        keyboardType: TextInputType.phone,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    SizedBox(
-                      width: 90,
-                      child: Material(
-                        color: _maroon.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(_inputRadius),
-                        child: InkWell(
-                          onTap: _getOtp,
-                          borderRadius: BorderRadius.circular(_inputRadius),
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(
-                              child: Text(
-                                'Get OTP',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: _maroon,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildInput(
+                  controller: _feeController,
+                  hint: 'Fee (\$)',
+                  icon: Icons.account_balance_wallet_outlined,
+                  keyboardType: TextInputType.number,
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildInput(
-                        controller: _otpController,
-                        hint: 'Enter 4-digit OTP',
-                        icon: Icons.lock_outline_rounded,
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    GestureDetector(
-                      onTap: _verifyOtp,
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Text(
-                          'VERIFY',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: _maroon,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildInput(
+            controller: _clinicController,
+            hint: 'Clinic Location',
+            icon: Icons.location_on_outlined,
+          ),
+          const SizedBox(height: 12),
+          _buildInput(
+            controller: _timeController,
+            hint: 'Available Time (e.g. 09:00 - 17:00)',
+            icon: Icons.access_time,
           ),
           const SizedBox(height: 24),
-          _StaggerSlide(
-            animation: _proAnim,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _sectionLabel('PROFESSIONAL CREDENTIALS'),
-                const SizedBox(height: 12),
-                _buildInput(
-                  controller: _specializationController,
-                  hint: 'Specialization',
-                  icon: Icons.medical_services_outlined,
-                  suffix: const Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: _labelGray,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildInput(
-                        controller: _expController,
-                        hint: 'Exp (Years)',
-                        icon: Icons.show_chart_rounded,
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _buildInput(
-                        controller: _feeController,
-                        hint: 'Fee (\$)',
-                        icon: Icons.attach_money_rounded,
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _buildInput(
-                  controller: _clinicController,
-                  hint: 'Clinic Location',
-                  icon: Icons.location_on_outlined,
-                ),
-                const SizedBox(height: 12),
-                _buildInput(
-                  controller: _timeController,
-                  hint: 'Available Time (e.g. 09:00 - 17:00)',
-                  icon: Icons.schedule_rounded,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          _StaggerSlide(
-            animation: _uploadAnim,
-            child: _buildUploadLicense(),
-          ),
+          
+          // Upload License
+          _buildUploadLicense(),
           const SizedBox(height: 20),
-          _StaggerSlide(
-            animation: _termsAnim,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: Checkbox(
-                    value: _agreedToTerms,
-                    onChanged: (v) =>
-                        setState(() => _agreedToTerms = v ?? false),
-                    activeColor: _maroon,
-                    fillColor: WidgetStateProperty.resolveWith((states) {
-                      if (states.contains(WidgetState.selected)) return _maroon;
-                      return _cardBg;
-                    }),
-                    side: BorderSide(
-                      color: _labelGray.withValues(alpha: 0.6),
-                      width: 1.5,
-                    ),
-                    shape: const CircleBorder(),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Wrap(
-                    alignment: WrapAlignment.start,
-                    children: [
-                      Text(
-                        'By registering, I agree to Masika AI\'s ',
-                        style: TextStyle(fontSize: 13, color: _labelGray),
-                      ),
-                      GestureDetector(
-                        onTap: () {},
-                        child: const Text(
-                          'Terms of Service',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: _maroon,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        ' and ',
-                        style: TextStyle(fontSize: 13, color: _labelGray),
-                      ),
-                      GestureDetector(
-                        onTap: () {},
-                        child: const Text(
-                          'Privacy Policy',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: _maroon,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          
+          // Terms Checkbox
+          _buildTermsCheckbox(),
           const SizedBox(height: 24),
-          _StaggerSlide(
-            animation: _buttonAnim,
-            child: SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: FilledButton(
-                onPressed: _isSubmitting ? null : _register,
-                style: FilledButton.styleFrom(
-                  backgroundColor: _maroon,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: _maroon.withValues(alpha: 0.6),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(_inputRadius),
-                  ),
-                  elevation: 0,
-                ),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          key: ValueKey('loading'),
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          key: ValueKey('text'),
-                          'Register as Doctor',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                ),
-              ),
-            ),
-          ),
+          
+          // Register Button
+          _buildRegisterButton(),
         ],
       ),
     );
   }
 
-  Widget _buildFooter() {
-    return AnimatedBuilder(
-      animation: _footerAnim,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _footerAnim.value,
-          child: Transform.translate(
-            offset: Offset(0, 12 * (1 - _footerAnim.value)),
-            child: child,
-          ),
-        );
-      },
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'Already have a professional account? ',
-            style: TextStyle(fontSize: 13, color: _labelGray),
-          ),
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (_) => const DoctorLoginScreen(),
-                ),
-              );
-            },
-            child: const Text(
-              'Sign In',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: _maroon,
-                decoration: TextDecoration.underline,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _sectionLabel(String text) {
+  Widget _buildSectionLabel(String text) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 12,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
         color: _labelGray,
         letterSpacing: 0.5,
       ),
     );
   }
 
-  Widget _buildInput({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    TextInputType? keyboardType,
-    Widget? suffix,
-  }) {
+  Widget _buildPhoneWithOtp() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildInput(
+            controller: _phoneController,
+            hint: 'Phone Number',
+            icon: Icons.phone_android_outlined,
+            keyboardType: TextInputType.phone,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Container(
+          decoration: BoxDecoration(
+            color: _inputBg,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _getOtp,
+              borderRadius: BorderRadius.circular(20),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Text(
+                  'Get OTP',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _maroon,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOtpWithVerify() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildInput(
+            controller: _otpController,
+            hint: 'Enter 4-digit OTP',
+            icon: Icons.lock_outline,
+            keyboardType: TextInputType.number,
+          ),
+        ),
+        const SizedBox(width: 12),
+        GestureDetector(
+          onTap: _verifyOtp,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Text(
+              'VERIFY',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: _otpVerified ? Colors.green : _maroon,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSpecializationDropdown() {
     return Container(
       decoration: BoxDecoration(
         color: _inputBg,
         borderRadius: BorderRadius.circular(_inputRadius),
       ),
       child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A1A)),
+        controller: _specializationController,
+        readOnly: true,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
+          color: _textGray,
+        ),
         decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(fontSize: 14, color: _labelGray),
+          hintText: 'Specialization',
+          hintStyle: TextStyle(
+            fontSize: 15,
+            color: _labelGray.withValues(alpha: 0.8),
+          ),
           prefixIcon: Padding(
             padding: const EdgeInsets.only(left: 14, right: 10),
-            child: Icon(icon, color: _labelGray, size: 22),
+            child: Icon(Icons.medical_services_outlined, color: _iconGray, size: 22),
           ),
-          suffixIcon: suffix != null
-              ? Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: suffix,
-                )
-              : null,
+          suffixIcon: Padding(
+            padding: const EdgeInsets.only(right: 14),
+            child: Icon(Icons.keyboard_arrow_down, color: _iconGray, size: 24),
+          ),
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
+        onTap: () {
+          // Show specialization dropdown
+          showModalBottomSheet(
+            context: context,
+            builder: (context) => _buildSpecializationBottomSheet(),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSpecializationBottomSheet() {
+    final specializations = [
+      'General Practitioner',
+      'Gynecologist',
+      'Obstetrician',
+      'Endocrinologist',
+      'Dermatologist',
+      'Psychiatrist',
+      'Nutritionist',
+      'Other'
+    ];
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        color: _white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Select Specialization',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: _maroon,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...specializations.map((spec) => ListTile(
+            title: Text(spec),
+            onTap: () {
+              setState(() => _specializationController.text = spec);
+              Navigator.pop(context);
+            },
+          )),
+        ],
       ),
     );
   }
@@ -640,26 +495,33 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen>
         );
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 28),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
         decoration: BoxDecoration(
-          color: _cardBg,
-          borderRadius: BorderRadius.circular(_inputRadius),
+          color: _white,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: _labelGray.withValues(alpha: 0.4),
-            width: 2,
-            strokeAlign: BorderSide.strokeAlignInside,
+            color: _labelGray.withValues(alpha: 0.2),
+            width: 1.5,
+            style: BorderStyle.solid,
           ),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(Icons.cloud_upload_rounded, size: 40, color: _maroon),
+            Icon(
+              Icons.cloud_upload_outlined,
+              size: 28,
+              color: _maroon,
+            ),
             const SizedBox(height: 12),
             const Text(
               'Upload Medical License',
               style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF4B4B4B),
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: _textGray,
               ),
             ),
             const SizedBox(height: 4),
@@ -675,32 +537,171 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen>
       ),
     );
   }
-}
 
-/// Staggered fade + slide up for form sections.
-class _StaggerSlide extends StatelessWidget {
-  const _StaggerSlide({
-    required this.animation,
-    required this.child,
-  });
-
-  final Animation<double> animation;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: animation.value,
-          child: Transform.translate(
-            offset: Offset(0, 16 * (1 - animation.value)),
-            child: child,
+  Widget _buildTermsCheckbox() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 22,
+          height: 22,
+          child: Checkbox(
+            value: _agreedToTerms,
+            onChanged: (v) => setState(() => _agreedToTerms = v ?? false),
+            activeColor: _maroon,
+            fillColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) return _maroon;
+              return _white;
+            }),
+            side: BorderSide(
+              color: _labelGray.withValues(alpha: 0.5),
+              width: 1.5,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+            ),
           ),
-        );
-      },
-      child: child,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: RichText(
+            text: TextSpan(
+              style: TextStyle(
+                fontSize: 13,
+                color: _textGray,
+                height: 1.4,
+              ),
+              children: [
+                const TextSpan(
+                  text: 'By registering, I agree to Masika AI\'s ',
+                ),
+                TextSpan(
+                  text: 'Terms of Service',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: _maroon,
+                  ),
+                ),
+                const TextSpan(
+                  text: ' and ',
+                ),
+                TextSpan(
+                  text: 'Privacy Policy',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: _maroon,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRegisterButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: FilledButton(
+        onPressed: _isSubmitting ? null : _register,
+        style: FilledButton.styleFrom(
+          backgroundColor: _maroon,
+          foregroundColor: _white,
+          disabledBackgroundColor: _maroon.withValues(alpha: 0.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(26),
+          ),
+          elevation: 0,
+        ),
+        child: _isSubmitting
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: _white,
+                  strokeWidth: 2,
+                ),
+              )
+            : const Text(
+                'Register as Doctor',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          'Already have a professional account? ',
+          style: TextStyle(
+            fontSize: 14,
+            color: _textGray,
+          ),
+        ),
+        GestureDetector(
+          onTap: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => const DoctorLoginScreen(),
+              ),
+            );
+          },
+          child: const Text(
+            'Sign In',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: _maroon,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInput({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    TextInputType? keyboardType,
+    bool readOnly = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: _inputBg,
+        borderRadius: BorderRadius.circular(_inputRadius),
+      ),
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        readOnly: readOnly,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
+          color: _textGray,
+        ),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(
+            fontSize: 15,
+            color: _labelGray.withValues(alpha: 0.8),
+          ),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.only(left: 14, right: 10),
+            child: Icon(icon, color: _iconGray, size: 22),
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+      ),
     );
   }
 }

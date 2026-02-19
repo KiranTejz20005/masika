@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../shared/providers/app_providers.dart';
-
 const _maroon = Color(0xFF6C102C);
 const _bg = Color(0xFFF8F7F5);
 const _bubbleGray = Color(0xFFE8E8E8);
@@ -110,92 +108,6 @@ class _DoctorChatScreenState extends ConsumerState<DoctorChatScreen> {
             onTap: () => setState(() => _selectedConversation = c),
           );
         },
-      ),
-    );
-  }
-
-  /// Top row: WELCOME DR. Masika Al, doctor avatar (light green bg + green border), notification bell with red dot.
-  Widget _buildWelcomeHeader(BuildContext context) {
-    final doctor = ref.watch(doctorProfileProvider);
-    final name = doctor?.name ?? 'Masika Al';
-    final shortName = name.length > 10 ? name.split(' ').last : name;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-      color: _bg,
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFFB2DFDB),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: _onlineGreen.withValues(alpha: 0.6),
-                width: 2,
-              ),
-            ),
-            child: const Icon(
-              Icons.medical_services_rounded,
-              color: _maroon,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'WELCOME DR. ',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[600],
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  shortName,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A1A),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              IconButton(
-                icon: const Icon(
-                  Icons.notifications_outlined,
-                  size: 26,
-                  color: Color(0xFF6B6B6B),
-                ),
-                onPressed: () {},
-              ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
