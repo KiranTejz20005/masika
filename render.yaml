@@ -1,0 +1,17 @@
+# Render Blueprint: Masika backend (Flask + NVIDIA API)
+# Deploy from Dashboard: New > Blueprint > connect repo, or set Root Directory manually.
+services:
+  - type: web
+    runtime: python
+    name: masika-backend
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT app:app
+    healthCheckPath: /health
+    envVars:
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NVIDIA_BASE_URL
+        value: https://integrate.api.nvidia.com/v1
+      - key: NVIDIA_MODEL
+        value: stepfun-ai/step-3.5-flash

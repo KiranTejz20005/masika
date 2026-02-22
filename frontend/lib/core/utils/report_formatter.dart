@@ -30,6 +30,14 @@ class ReportFormatter {
     return line.trim();
   }
 
+  /// Known section headings for structured wellness report (always bold).
+  static const _sectionHeadings = [
+    'Wellness Report Summary',
+    'Key observation:',
+    'Suggested next steps:',
+    'Important note about this analysis:',
+  ];
+
   /// Parse report into segments: headings (bold) and body (normal). Output is plain text only.
   static List<ReportSegment> parseReport(String rawReport) {
     final String plain = stripMarkdown(rawReport);
@@ -41,8 +49,10 @@ class ReportFormatter {
         continue;
       }
       final noBullet = _stripLinePrefix(trimmed);
-      // Only short lines ending with colon are treated as section headings (bold).
-      final isHeader = noBullet.endsWith(':') && noBullet.length <= 60;
+      final isKnownHeading = _sectionHeadings.any((h) =>
+          noBullet == h || noBullet.startsWith('$h '));
+      final isShortHeader = noBullet.endsWith(':') && noBullet.length <= 60;
+      final isHeader = isKnownHeading || isShortHeader;
       final displayText = noBullet.isEmpty ? trimmed : noBullet;
       segments.add(ReportSegment(
         text: (displayText.isEmpty ? ' ' : displayText) + '\n',

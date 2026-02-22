@@ -105,6 +105,7 @@ Rebuild/run the Flutter app; it will use the Render backend.
 
 | Issue | What to do |
 |--------|------------|
+| **502 Bad Gateway** | Service not starting. In Dashboard: set **Root Directory** to `backend`; check **Logs** (Build + Deploy) for errors; set **Start Command** to `gunicorn --bind 0.0.0.0:$PORT app:app`; add env var `NVIDIA_API_KEY`. |
 | Build fails | Check **Logs** for errors. Ensure **Root Directory** is `backend` and `requirements.txt` is there. |
 | “Application failed to respond” | Confirm **Start Command** is `gunicorn --bind 0.0.0.0:$PORT app:app` and that `gunicorn` is in `requirements.txt`. |
 | 503 or timeouts on Free tier | Free services spin down after inactivity. First request after idle can take 30–60 seconds; retry once. |

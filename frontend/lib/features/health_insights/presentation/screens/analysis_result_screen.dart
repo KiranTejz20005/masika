@@ -82,7 +82,7 @@ class AnalysisResultScreen extends ConsumerWidget {
               const SizedBox(height: 24),
             ],
             if (record.report != null && record.report!.trim().isNotEmpty) ...[
-              _SectionTitle(title: 'Wellness report'),
+              _SectionTitle(title: 'Wellness Report Summary'),
               const SizedBox(height: 8),
               _ReportCard(reportText: record.report!),
               const SizedBox(height: 24),

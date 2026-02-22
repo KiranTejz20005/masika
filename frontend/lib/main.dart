@@ -7,7 +7,6 @@ import 'core/localization/app_localizations.dart';
 import 'core/services/hive_service.dart';
 import 'core/services/supabase_service.dart';
 import 'core/theme/app_theme.dart';
-import 'core/widgets/analysis_service_check_wrapper.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
 import 'features/onboarding/data/onboarding_storage.dart';
 import 'features/onboarding/presentation/screens/onboarding_screen.dart';
@@ -70,7 +69,7 @@ class _SplashWrapperState extends State<SplashWrapper> {
       navigator.pushReplacement(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
-              const AnalysisServiceCheckWrapper(child: DoctorShell()),
+              const DoctorShell(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },
@@ -86,8 +85,7 @@ class _SplashWrapperState extends State<SplashWrapper> {
         : const OnboardingScreen();
     navigator.pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            AnalysisServiceCheckWrapper(child: next),
+        pageBuilder: (context, animation, secondaryAnimation) => next,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },

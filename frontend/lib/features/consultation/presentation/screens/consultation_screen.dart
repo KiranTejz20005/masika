@@ -796,12 +796,12 @@ class _NearbySpecialistCard extends StatelessWidget {
   const _NearbySpecialistCard({
     required this.specialist,
     required this.onBook,
-    required this.onChat,
+    this.onChat,
   });
 
   final Specialist specialist;
   final VoidCallback onBook;
-  final VoidCallback onChat;
+  final VoidCallback? onChat;
 
   @override
   Widget build(BuildContext context) {
@@ -920,50 +920,27 @@ class _NearbySpecialistCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 48,
-                  child: Material(
-                    color: _maroon,
-                    borderRadius: BorderRadius.circular(24),
-                    child: InkWell(
-                      onTap: onBook,
-                      borderRadius: BorderRadius.circular(24),
-                      child: const Center(
-                        child: Text(
-                          'Book Consultation',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Material(
-                color: _cardBg,
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: Material(
+              color: _maroon,
+              borderRadius: BorderRadius.circular(24),
+              child: InkWell(
+                onTap: onBook,
                 borderRadius: BorderRadius.circular(24),
-                child: InkWell(
-                  onTap: onChat,
-                  borderRadius: BorderRadius.circular(24),
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: const Color(0xFFE0E0E0)),
+                child: const Center(
+                  child: Text(
+                    'Book Consultation',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
                     ),
-                    child: const Icon(Icons.chat_bubble_outline_rounded, size: 22, color: _maroon),
                   ),
                 ),
               ),
-            ],
+            ),
           ),
         ],
       ),

@@ -83,7 +83,9 @@ class MlBackendService {
   final String _baseUrl;
   final String? _apiKey;
 
-  static const _timeoutSeconds = 15;
+  /// Long timeout for /predict: Render free tier may need 30–60s to wake (cold start).
+  static const _predictTimeoutSeconds = 90;
+  static const _healthTimeoutSeconds = 10;
 
   String get baseUrl => _baseUrl;
 
@@ -115,7 +117,7 @@ class MlBackendService {
                 ? {'Authorization': 'Bearer $_apiKey'}
                 : null,
           )
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: _healthTimeoutSeconds));
       if (response.statusCode != 200) return false;
       final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
       return decoded?['status'] == 'ok';
@@ -146,15 +148,22 @@ class MlBackendService {
       response = await http
           .post(uri, headers: _headers, body: body)
           .timeout(
-            const Duration(seconds: _timeoutSeconds),
+            const Duration(seconds: _predictTimeoutSeconds),
             onTimeout: () => throw PredictionException(
-              'Cannot reach analysis service. Check internet connection.',
+              'The server is taking longer than usual (it may be waking up). '
+              'Please check your internet connection and try again.',
             ),
           );
     } catch (e) {
       if (e is PredictionException) rethrow;
-      throw const PredictionException(
-        'Cannot reach analysis service. Check internet connection.',
+      throw PredictionException(
+        e.toString().contains('SocketException') ||
+                e.toString().contains('Connection refused') ||
+                e.toString().contains('Failed host lookup') ||
+                e.toString().contains('Connection timed out')
+            ? 'Cannot reach the analysis server. Check your internet connection and try again. '
+              'If using a free server, the first request may take up to a minute.'
+            : 'Connection error. Please check your internet and try again.',
       );
     }
 

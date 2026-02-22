@@ -10,12 +10,20 @@ load_dotenv()
 app = Flask(__name__)
 
 # -----------------------------
-# NVIDIA API (OpenAI-compatible)
+# NVIDIA API (OpenAI-compatible) — lazy init so /health works even if key is missing
 # -----------------------------
-client = OpenAI(
-    base_url=os.environ.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1"),
-    api_key=os.environ.get("NVIDIA_API_KEY", ""),
-)
+_client = None
+
+
+def _get_client():
+    global _client
+    if _client is None:
+        base = os.environ.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
+        key = os.environ.get("NVIDIA_API_KEY", "")
+        _client = OpenAI(base_url=base, api_key=key)
+    return _client
+
+
 NVIDIA_MODEL = os.environ.get("NVIDIA_MODEL", "stepfun-ai/step-3.5-flash")
 NVIDIA_TEMPERATURE = float(os.environ.get("NVIDIA_TEMPERATURE", "1"))
 NVIDIA_TOP_P = float(os.environ.get("NVIDIA_TOP_P", "0.9"))
@@ -24,7 +32,11 @@ NVIDIA_MAX_TOKENS = int(os.environ.get("NVIDIA_MAX_TOKENS", "16384"))
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    """Simple root response; web form uses /analyze_diagnosis."""
+    try:
+        return render_template("index.html")
+    except Exception:
+        return jsonify({"service": "masika-backend", "health": "/health", "predict": "POST /predict"})
 
 
 @app.route("/health", methods=["GET"])
@@ -80,22 +92,45 @@ def _build_prompt(data, lab_report_text="No PDF report uploaded."):
     JSON structure:
     {{
         "diagnosis_result": "NORMAL" or "ABNORMAL",
-        "reason_summary": "A friendly, empathetic summary starting with 'Dear [Name]'. Explain findings.",
-        "plan_actions": "Steps to follow immediately.",
-        "nutritional_advice": "What to eat.",
-        "avoid_list": "What to avoid.",
-        "doctor_visit_trigger": "When to visit a doctor urgently.",
-        "detailed_abnormal_note": "Clinical reasoning.",
-        "consult_recommendation": "Recommendation text."
+        "reason_summary": "A brief empathetic summary (1-2 sentences) for the Wellness Report Summary.",
+        "key_observation": "Main clinical findings and what stands out from the data (2-4 clear points).",
+        "suggested_next_steps": "Concrete steps the user should take (lifestyle, follow-up, tests). Number or bullet in plain text.",
+        "important_note": "One clear disclaimer: this is not a substitute for a doctor; when to seek care; key caution."
     }}
 
     Rules: "ABNORMAL" if Hemoglobin < 11, pads > 8, severe pain, or missed periods.
     """
 
 
+def _build_structured_report(ai_result):
+    """Build a structured report string: Wellness Report Summary, Key observation, Suggested next steps, Important note."""
+    def get(*keys, default=""):
+        for k in keys:
+            v = ai_result.get(k)
+            if v is not None and str(v).strip():
+                return str(v).strip()
+        return default
+
+    summary = get("reason_summary", default="")
+    key_obs = get("key_observation", "detailed_abnormal_note")
+    next_steps = get("suggested_next_steps", "plan_actions")
+    important = get("important_note", "doctor_visit_trigger", "consult_recommendation")
+
+    parts = []
+    if summary:
+        parts.append("Wellness Report Summary\n" + summary)
+    if key_obs:
+        parts.append("Key observation:\n" + key_obs)
+    if next_steps:
+        parts.append("Suggested next steps:\n" + next_steps)
+    if important:
+        parts.append("Important note about this analysis:\n" + important)
+    return "\n\n".join(parts) if parts else summary or "No report content available."
+
+
 def _call_nvidia_and_parse(prompt):
     """Call NVIDIA API and return parsed JSON result. Raises on error."""
-    completion = client.chat.completions.create(
+    completion = _get_client().chat.completions.create(
         model=NVIDIA_MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=NVIDIA_TEMPERATURE,
@@ -137,14 +172,7 @@ def predict():
     if diagnosis not in ("NORMAL", "ABNORMAL"):
         diagnosis = "NORMAL"
 
-    # Build a single report string for the app (Wellness report section)
-    parts = []
-    for key in ("reason_summary", "plan_actions", "nutritional_advice", "avoid_list", "doctor_visit_trigger", "consult_recommendation"):
-        val = ai_result.get(key)
-        if val and str(val).strip():
-            parts.append(str(val).strip())
-    report = "\n\n".join(parts) if parts else (ai_result.get("reason_summary") or "")
-
+    report = _build_structured_report(ai_result)
     return jsonify({
         "prediction": diagnosis,
         "probabilities": {},
