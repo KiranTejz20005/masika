@@ -260,11 +260,13 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
                   ),
                 ],
               ),
-              child: const Center(
-                child: Icon(
-                  Icons.medical_services_outlined,
-                  size: 36,
-                  color: _white,
+              child: ClipOval(
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Image.asset(
+                    'assets/masika_icon.png',
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ),

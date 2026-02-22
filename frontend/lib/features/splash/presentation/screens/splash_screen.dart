@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -65,34 +63,19 @@ class _SplashScreenState extends State<SplashScreen>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Logo with concentric circles
-                        Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Outer circle
-                            Container(
-                              width: 200,
-                              height: 200,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: const Color(0xFFE8C5D4).withValues(alpha: 0.3),
-                              ),
+                        // App logo (masika_icon.png – lotus)
+                        SizedBox(
+                          width: 160,
+                          height: 160,
+                          child: Image.asset(
+                            'assets/masika_icon.png',
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => const Icon(
+                              Icons.spa_rounded,
+                              size: 120,
+                              color: Color(0xFF8B3A5C),
                             ),
-                            // Middle circle
-                            Container(
-                              width: 140,
-                              height: 140,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: const Color(0xFFE8C5D4).withValues(alpha: 0.5),
-                              ),
-                            ),
-                            // Inner flower shape
-                            CustomPaint(
-                              size: const Size(60, 60),
-                              painter: FlowerLogoPainter(),
-                            ),
-                          ],
+                          ),
                         ),
                         const SizedBox(height: 40),
                         // App name
@@ -155,38 +138,6 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
   }
-}
-
-class FlowerLogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF8B3A5C)
-      ..style = PaintingStyle.fill;
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final petalRadius = size.width / 5;
-    final petalDistance = size.width / 3.5;
-
-    // Draw 8 petals in a flower pattern
-    for (int i = 0; i < 8; i++) {
-      final angle = (i * 45) * math.pi / 180;
-      final petalCenter = Offset(
-        center.dx + petalDistance * math.cos(angle),
-        center.dy + petalDistance * math.sin(angle),
-      );
-      canvas.drawCircle(petalCenter, petalRadius, paint);
-    }
-
-    // Draw center circle
-    final centerPaint = Paint()
-      ..color = const Color(0xFFA94768)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, size.width / 4.5, centerPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class LoadingDots extends StatefulWidget {

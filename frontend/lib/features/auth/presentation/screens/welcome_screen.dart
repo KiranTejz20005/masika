@@ -185,7 +185,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         child: Column(
           children: [
             const SizedBox(height: 40),
-            // Frosted glass circle with female symbol
+            // Logo
             Container(
               width: 72,
               height: 72,
@@ -204,11 +204,13 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   ),
                 ],
               ),
-              child: const Center(
-                child: Icon(
-                  Icons.female,
-                  size: 40,
-                  color: _white,
+              child: ClipOval(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Image.asset(
+                    'assets/masika_icon.png',
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ),
@@ -615,5 +617,4 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       ),
     );
   }
-
 }

@@ -257,8 +257,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildHeader(),
-          const SizedBox(height: 24),
           _buildFullNameField(),
           const SizedBox(height: 18),
           _buildEmailField(),
@@ -276,47 +274,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           _buildTermsFooter(),
         ],
       ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Column(
-      children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: const BoxDecoration(
-            color: _maroon,
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.eco_rounded,
-            color: _white,
-            size: 32,
-          ),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'Create Your Account',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: _labelGray,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Personalized wellness and diagnostic care for women, powered by AI.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-            color: _hintGray,
-            height: 1.4,
-          ),
-        ),
-      ],
     );
   }
 
