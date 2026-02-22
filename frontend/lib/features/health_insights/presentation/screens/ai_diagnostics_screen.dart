@@ -135,14 +135,6 @@ class _AiDiagnosticsScreenState extends ConsumerState<AiDiagnosticsScreen>
           style: AppTypography.screenTitle.copyWith(color: AppColors.textPrimary),
         ),
         centerTitle: true,
-        actions: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: _inputBg,
-            child: Icon(Icons.person_outline_rounded, color: _maroon, size: 22),
-          ),
-          const SizedBox(width: 12),
-        ],
       ),
       body: Column(
         children: [
