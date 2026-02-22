@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/responsive/responsive_config.dart';
+import 'in_app_video_screen.dart';
 import '../../../../shared/providers/app_providers.dart';
 import '../../../auth/presentation/screens/profile_screen.dart';
 import '../../../notifications/presentation/screens/notifications_screen.dart';
@@ -17,7 +18,9 @@ class _VideoItem {
   final String tag;
   final String duration;
   final String title;
+  final String description;
   final String category;
+  final String url;
 
   const _VideoItem({
     required this.id,
@@ -25,61 +28,44 @@ class _VideoItem {
     required this.tag,
     required this.duration,
     required this.title,
+    required this.description,
     required this.category,
+    required this.url,
   });
 }
 
+/// YouTube videos embedded on home screen (Diagnostics, Hormonal Health, etc.)
 List<_VideoItem> _buildDummyVideos() {
-  const categories = [
-    'Wellness',
-    'Diagnostics',
-    'Hormonal Health',
-    'Insights',
-    'Period Health',
-    'Self-Care',
+  const videos = [
+    (id: '5u6Y6ZP2_Wg', title: 'AI Diagnostics: Myths vs Reality', category: 'Diagnostics', tag: 'INSIGHTS',
+     description: 'Separating fact from fiction when it comes to AI in healthcare diagnostics. Learn what AI can and cannot do today, and how to interpret results with confidence.'),
+    (id: 'cfROFgkV43E', title: 'Understanding your lab results', category: 'Diagnostics', tag: 'INSIGHTS',
+     description: 'A clear guide to reading your blood work and lab reports. We break down common markers, ranges, and what they mean for your health.'),
+    (id: 'WoeuyW74V0k', title: 'Cycle phases explained', category: 'Hormonal Health', tag: 'HORMONAL',
+     description: 'Your menstrual cycle in plain language: follicular, ovulation, luteal, and menstruation. Know what to expect in each phase.'),
+    (id: 'GUVL7jtxTDg', title: 'Hormones and mood', category: 'Hormonal Health', tag: 'HORMONAL',
+     description: 'How hormones influence mood and energy throughout your cycle. Practical tips to support emotional balance.'),
+    (id: 'q-6MgBDqK9E', title: 'Nutrition for balance', category: 'Hormonal Health', tag: 'HORMONAL',
+     description: 'Foods and eating habits that support hormonal health. Simple, sustainable nutrition tips for everyday life.'),
+    (id: 'cjbgZwgdY7Q', title: 'Period care essentials', category: 'Period Health', tag: 'PERIOD',
+     description: 'Everything you need for a safer, more comfortable period: products, hygiene, and when to see a doctor.'),
+    (id: 'kmWbOC8Fbb0', title: 'Wellness & self-care tips', category: 'Wellness', tag: 'WELLNESS',
+     description: 'Small daily habits that add up: rest, movement, and mindfulness for long-term wellness.'),
   ];
-  final thumbs = [
-    'https://images.unsplash.com/photo-1549576490-b0b4831ef60a?w=500&h=320&fit=crop',
-    'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=500&h=320&fit=crop',
-    'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=500&h=320&fit=crop',
-    'https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?w=500&h=320&fit=crop',
-    'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=500&h=320&fit=crop',
-    'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=500&h=320&fit=crop',
+  const durations = ['5:20 mins', '8:24 mins', '12:45 mins', '6:10 mins', '10:00 mins', '7:35 mins', '9:00 mins'];
+  return [
+    for (var i = 0; i < videos.length; i++)
+      _VideoItem(
+        id: videos[i].id,
+        thumb: 'https://img.youtube.com/vi/${videos[i].id}/mqdefault.jpg',
+        tag: videos[i].tag,
+        duration: durations[i],
+        title: videos[i].title,
+        description: videos[i].description,
+        category: videos[i].category,
+        url: 'https://www.youtube.com/watch?v=${videos[i].id}',
+      ),
   ];
-  final List<_VideoItem> out = [];
-  int id = 0;
-  final titles = {
-    'Wellness': ['Morning hormonal balance routine', 'Evening wind-down yoga', 'Breathing for stress relief', 'Sleep hygiene tips', 'Mindful movement basics', 'Daily stretch routine'],
-    'Diagnostics': ['AI Diagnostics: Myths vs Reality', 'Understanding your lab results', 'When to see a doctor', 'Symptom checker basics', 'Screening 101', 'Health metrics explained'],
-    'Hormonal Health': ['Cycle phases explained', 'Hormones and mood', 'Nutrition for balance', 'Exercise and hormones', 'Tracking your cycle', 'PCOS overview'],
-    'Insights': ['Weekly health digest', 'Research roundup', 'Expert Q&A', 'Community stories', 'Trending topics', 'Deep dive: iron'],
-    'Period Health': ['Period care essentials', 'Managing heavy flow', 'Pain relief options', 'Cycle-friendly nutrition', 'Products compared', 'Myths vs facts'],
-    'Self-Care': ['Rest day ideas', 'Bath rituals', 'Journaling prompts', 'Boundary setting', 'Saying no with grace', 'Quick reset routine'],
-  };
-  final tags = {
-    'Wellness': 'WELLNESS',
-    'Diagnostics': 'INSIGHTS',
-    'Hormonal Health': 'HORMONAL',
-    'Insights': 'INSIGHTS',
-    'Period Health': 'PERIOD',
-    'Self-Care': 'WELLNESS',
-  };
-  final durations = ['5:20 mins', '8:24 mins', '12:45 mins', '6:10 mins', '10:00 mins', '7:35 mins'];
-  for (final cat in categories) {
-    final catTitles = titles[cat]!;
-    final tag = tags[cat]!;
-    for (var i = 0; i < catTitles.length; i++) {
-      out.add(_VideoItem(
-        id: '${id++}',
-        thumb: thumbs[i % thumbs.length],
-        tag: tag,
-        duration: durations[i % durations.length],
-        title: catTitles[i],
-        category: cat,
-      ));
-    }
-  }
-  return out;
 }
 
 final _allVideos = _buildDummyVideos();
@@ -143,6 +129,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       tag: video.tag,
                       duration: video.duration,
                       title: video.title,
+                      description: video.description,
+                      videoId: video.id,
                     );
                   },
                   childCount: videos.isEmpty ? 0 : videos.length * 2 - 1,
@@ -404,21 +392,38 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required String tag,
     required String duration,
     required String title,
+    required String description,
+    required String videoId,
   }) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (context) => InAppVideoScreen(
+                videoId: videoId,
+                title: title,
+                description: description,
+              ),
+            ),
+          );
+        },
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+        child: Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Stack(
+          child: Stack(
         alignment: Alignment.center,
         children: [
           Image.network(
@@ -494,6 +499,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ),
         ],
+          ),
+        ),
       ),
     );
   }
