@@ -1,3 +1,8 @@
+# Environment and secrets – use .env.example as template; never commit .env
+.env
+.env.local
+.env.*.local
+
 # Miscellaneous
 *.class
 *.log

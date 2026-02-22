@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/providers/app_providers.dart';
+import '../../../consultation/presentation/screens/my_bookings_screen.dart';
 import '../../../health_onboarding/presentation/screens/health_onboarding_screen.dart';
 import '../../../reports/presentation/screens/reports_screen.dart';
 import '../../../health_insights/presentation/screens/health_insight_screen.dart';
+import 'edit_profile_screen.dart';
 import 'welcome_screen.dart';
 
 /// Settings-style profile screen: user card, HEALTH RECORDS, SUPPORT & LEGAL,
@@ -27,23 +31,24 @@ class ProfileScreen extends ConsumerWidget {
         ? profile!.email!
         : 'sarah.j@example.com';
 
+    final theme = Theme.of(context);
+    final bg = theme.scaffoldBackgroundColor;
+    final textColor = theme.colorScheme.onSurface;
+    final subtextColor = theme.colorScheme.onSurface.withValues(alpha: 0.7);
+
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: _bg,
+        backgroundColor: bg,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: _maroon, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: theme.colorScheme.primary, size: 20),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           'Settings',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF333333),
-          ),
+          style: AppTypography.screenTitle.copyWith(color: textColor),
         ),
         centerTitle: true,
       ),
@@ -52,14 +57,20 @@ class ProfileScreen extends ConsumerWidget {
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
           children: [
-            _buildProfileCard(context, ref, name, email),
+            _buildProfileCard(context, ref, name, email, theme),
             const SizedBox(height: 24),
-            _sectionLabel('UPGRADE TO PREMIUM'),
+            _sectionLabel('UPGRADE TO PREMIUM', subtextColor),
             const SizedBox(height: 10),
             _buildUpgradeToPremiumCard(context),
             const SizedBox(height: 24),
-            _sectionLabel('HEALTH RECORDS'),
+            _sectionLabel('HEALTH RECORDS', subtextColor),
             const SizedBox(height: 10),
+            _SettingsRow(
+              icon: Icons.calendar_today_rounded,
+              label: 'My Bookings',
+              onTap: () => _push(context, const MyBookingsScreen()),
+            ),
+            const SizedBox(height: 8),
             _SettingsRow(
               icon: Icons.show_chart_rounded,
               label: 'Diagnosis History',
@@ -72,7 +83,7 @@ class ProfileScreen extends ConsumerWidget {
               onTap: () => _push(context, const ReportsScreen()),
             ),
             const SizedBox(height: 24),
-            _sectionLabel('SUPPORT & LEGAL'),
+            _sectionLabel('SUPPORT & LEGAL', subtextColor),
             const SizedBox(height: 10),
             _SettingsRow(
               icon: Icons.help_outline_rounded,
@@ -129,12 +140,12 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 20),
             _buildLogoutButton(context, ref),
             const SizedBox(height: 32),
-            const Center(
+            Center(
               child: Text(
                 'Masika AI v2.4.0',
                 style: TextStyle(
                   fontSize: 12,
-                  color: _sectionGray,
+                  color: subtextColor,
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -145,15 +156,21 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileCard(BuildContext context, WidgetRef ref, String name, String email) {
+  Widget _buildProfileCard(BuildContext context, WidgetRef ref, String name, String email, ThemeData theme) {
+    final profile = ref.watch(userProfileProvider);
+    final avatarUrl = profile?.avatarUrl;
+    final primary = theme.colorScheme.primary;
+    final surface = theme.colorScheme.surface;
+    final onSurface = theme.colorScheme.onSurface;
+    final muted = onSurface.withValues(alpha: 0.7);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       decoration: BoxDecoration(
-        color: _cardBg,
+        color: surface,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 2),
           ),
@@ -161,18 +178,19 @@ class ProfileScreen extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: _iconBg,
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: const Icon(
-              Icons.person_rounded,
-              color: _maroon,
-              size: 36,
+          GestureDetector(
+            onTap: () => _push(context, const EditProfileScreen()),
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: primary.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: avatarUrl != null && avatarUrl.isNotEmpty
+                  ? Image.network(avatarUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Icon(Icons.person_rounded, color: primary, size: 36))
+                  : Icon(Icons.person_rounded, color: primary, size: 36),
             ),
           ),
           const SizedBox(width: 20),
@@ -181,58 +199,68 @@ class ProfileScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: _textDark,
+                GestureDetector(
+                  onTap: () => _push(context, const EditProfileScreen()),
+                  child: Text(
+                    name,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 6),
                 Text(
                   email,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: _sectionGray,
+                    color: muted,
                     fontWeight: FontWeight.w400,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 10),
-                GestureDetector(
-                  onTap: () {
-                    final healthProfile = ref.read(healthProfileProvider);
-                    _push(
-                      context,
-                      HealthOnboardingScreen(
-                        initialProfile: healthProfile,
-                        isEditMode: true,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () => _push(context, const EditProfileScreen()),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Edit name & photo', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: primary)),
+                          const SizedBox(width: 4),
+                          Icon(Icons.chevron_right_rounded, size: 20, color: primary),
+                        ],
                       ),
-                    );
-                  },
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'View Profile',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: _maroon,
-                        ),
+                    ),
+                    const SizedBox(height: 6),
+                    GestureDetector(
+                      onTap: () {
+                        final healthProfile = ref.read(healthProfileProvider);
+                        _push(
+                          context,
+                          HealthOnboardingScreen(
+                            initialProfile: healthProfile,
+                            isEditMode: true,
+                          ),
+                        );
+                      },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('View Profile', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: primary)),
+                          const SizedBox(width: 4),
+                          Icon(Icons.chevron_right_rounded, size: 20, color: primary),
+                        ],
                       ),
-                      SizedBox(width: 4),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 20,
-                        color: _maroon,
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -429,15 +457,15 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _sectionLabel(String text) {
+  Widget _sectionLabel(String text, [Color? color]) {
     return Padding(
       padding: const EdgeInsets.only(left: 4),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: _sectionGray,
+          color: color ?? _sectionGray,
           letterSpacing: 0.8,
         ),
       ),
@@ -604,14 +632,14 @@ class _SettingsRow extends StatelessWidget {
     this.onTap,
   });
 
-  static const _maroon = Color(0xFF8B3037);
-  static const _iconBg = Color(0xFFF0EBEC);
-  static const _textDark = Color(0xFF333333);
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final surface = theme.colorScheme.surface;
+    final primary = theme.colorScheme.primary;
+    final onSurface = theme.colorScheme.onSurface;
     return Material(
-      color: _cardBg,
+      color: surface,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -622,7 +650,7 @@ class _SettingsRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -633,27 +661,27 @@ class _SettingsRow extends StatelessWidget {
               Container(
                 width: 44,
                 height: 44,
-                decoration: const BoxDecoration(
-                  color: _iconBg,
+                decoration: BoxDecoration(
+                  color: primary.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: _maroon, size: 22),
+                child: Icon(icon, color: primary, size: 22),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: _textDark,
+                    color: onSurface,
                   ),
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: _maroon,
+                color: primary,
               ),
             ],
           ),
@@ -662,8 +690,6 @@ class _SettingsRow extends StatelessWidget {
     );
   }
 }
-
-const _cardBg = Color(0xFFFDFCFC);
 
 // ═══════════════════════════════════════════════════════════════
 //  Premium plan tile for upgrade sheet

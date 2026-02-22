@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
+
 import '../../../../shared/providers/app_providers.dart';
 import '../../../auth/presentation/screens/welcome_screen.dart';
 
@@ -15,17 +18,8 @@ class DoctorProfileScreen extends ConsumerStatefulWidget {
 
 class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
   bool _isOnline = true;
-  final TextEditingController _aboutController = TextEditingController(
-    text: 'Dr. Sarah Chen is a board-certified obstetrician and gynecologist with over 12 years of clinical experience. She specializes in high-risk pregnancies and minimally invasive gynecologic surgery, focusing on providing compassionate, patient-centered care for women at every stage of life.',
-  );
-  
-  final List<String> _specializations = [
-    'Prenatal Care',
-    'Family Planning',
-    'Minimally Invasive Surgery',
-    'Gynecology',
-    'Women\'s Wellness',
-  ];
+  late final TextEditingController _aboutController;
+  final List<String> _specializations = [];
 
   // Design colors
   static const _maroon = Color(0xFF8C1D3F);
@@ -35,6 +29,28 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
   static const _labelGray = Color(0xFF4B4B4B);
   static const _onlineGreen = Color(0xFF4CAF50);
   static const _offlineGray = Color(0xFF9E9E9E);
+
+  @override
+  void initState() {
+    super.initState();
+    _aboutController = TextEditingController();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncFromProfile());
+  }
+
+  void _syncFromProfile() {
+    if (!mounted) return;
+    final doctor = ref.read(doctorProfileProvider);
+    if (doctor != null && _aboutController.text.isEmpty) {
+      final exp = doctor.experience.isNotEmpty ? doctor.experience : '—';
+      final spec = doctor.specialty.isNotEmpty ? doctor.specialty : 'General';
+      _aboutController.text =
+          '${doctor.name} is a healthcare professional with $exp of experience. Specialization: $spec. Focus on providing compassionate, patient-centered care.';
+      if (doctor.specialty.isNotEmpty && !_specializations.contains(doctor.specialty)) {
+        _specializations.add(doctor.specialty);
+      }
+      setState(() {});
+    }
+  }
 
   @override
   void dispose() {
@@ -255,7 +271,11 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final doctor = ref.watch(doctorProfileProvider);
-    final name = doctor?.name ?? 'Dr. Sarah Chen';
+    final name = doctor?.name.isNotEmpty == true ? doctor!.name : 'Doctor';
+    final specialty = doctor?.specialty.isNotEmpty == true ? doctor!.specialty.toUpperCase() : 'SPECIALIST';
+    final experience = doctor?.experience.isNotEmpty == true ? doctor!.experience : '—';
+    final patientsDisplay = '—';
+    final ratingDisplay = '5.0';
 
     return Scaffold(
       backgroundColor: _bg,
@@ -263,16 +283,12 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
         backgroundColor: _bg,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: _maroon),
-          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: _maroon, size: 20),
+          onPressed: () => ref.read(doctorNavIndexProvider.notifier).state = 0,
         ),
-        title: const Text(
+        title: Text(
           'Doctor Profile',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: _labelGray,
-          ),
+          style: AppTypography.screenTitle.copyWith(color: AppColors.textPrimary),
         ),
         centerTitle: true,
         actions: [
@@ -289,11 +305,11 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
           child: Column(
             children: [
               const SizedBox(height: 12),
-              _buildProfileHeader(name),
+              _buildProfileHeader(name, specialty),
               const SizedBox(height: 24),
               _buildOnlineToggle(),
               const SizedBox(height: 24),
-              _buildStatsRow(),
+              _buildStatsRow(patientsDisplay, experience, ratingDisplay),
               const SizedBox(height: 32),
               _buildAboutMeSection(),
               const SizedBox(height: 24),
@@ -307,10 +323,9 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
     );
   }
 
-  Widget _buildProfileHeader(String name) {
+  Widget _buildProfileHeader(String name, String specialtyLabel) {
     return Column(
       children: [
-        // Profile Picture with Online Status
         Stack(
           alignment: Alignment.bottomRight,
           children: [
@@ -339,7 +354,6 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        // Name
         Text(
           name,
           style: const TextStyle(
@@ -349,10 +363,9 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
           ),
         ),
         const SizedBox(height: 4),
-        // Specialty
-        const Text(
-          'OB/GYN SPECIALIST',
-          style: TextStyle(
+        Text(
+          specialtyLabel,
+          style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: _maroon,
@@ -400,19 +413,19 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
     );
   }
 
-  Widget _buildStatsRow() {
+  Widget _buildStatsRow(String patients, String experience, String rating) {
     return Row(
       children: [
         Expanded(
-          child: _buildStatCard('1.2k+', 'PATIENTS'),
+          child: _buildStatCard(patients, 'PATIENTS'),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _buildStatCard('12 yrs', 'EXPERIENCE'),
+          child: _buildStatCard(experience, 'EXPERIENCE'),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _buildStatCard('4.9', 'RATING'),
+          child: _buildStatCard(rating, 'RATING'),
         ),
       ],
     );

@@ -69,6 +69,12 @@ class _HealthGateState extends ConsumerState<_HealthGate> {
   }
 
   Future<void> _reload() async {
+    // Refresh profile from Supabase so we have the latest saved data for this account
+    final userRepo = ref.read(userRepositoryProvider);
+    final profile = await userRepo.getCurrentUserProfile();
+    if (profile != null) {
+      await ref.read(userProfileProvider.notifier).setProfile(profile);
+    }
     await ref.read(healthProfileProvider.notifier).reload();
     if (mounted) widget.onCheckDone();
   }

@@ -8,4 +8,6 @@ abstract final class HiveKeys {
   static const onboardingCompleted = 'onboarding_completed';
   static const userHealthProfile = 'user_health_profile';
   static const appVersionAtLaunch = 'app_version_at_launch';
+  static const appointments = 'appointments';
+  static const savedAnalysisReports = 'saved_analysis_reports';
 }

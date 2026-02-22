@@ -11,7 +11,6 @@ import '../../../../core/utils/validators.dart';
 import '../../../../shared/models/user_health_profile.dart';
 import '../../../../shared/models/user_profile.dart';
 import '../../../../shared/providers/app_providers.dart';
-import '../../../auth/data/user_repository.dart';
 import '../../../dashboard/presentation/screens/dashboard_shell.dart';
 
 /// Single onboarding flow: name, age, language → cycle basics → symptoms → lifestyle → concerns → confirm.
@@ -171,7 +170,19 @@ class _OnboardingWizardScreenState extends ConsumerState<OnboardingWizardScreen>
     );
     ref.read(userProfileProvider.notifier).setProfile(profile);
     ref.read(localeProvider.notifier).state = Locale(_languageCode);
-    await UserRepository().saveProfile(profile);
+    // Persist to Supabase so data is saved for this account
+    final userRepo = ref.read(userRepositoryProvider);
+    if (userId.isNotEmpty && userId != 'guest') {
+      try {
+        final data = profile.toJson();
+        if (existingProfile != null) {
+          if (existingProfile.email != null) data['email'] = existingProfile.email;
+          if (existingProfile.phone != null) data['phone'] = existingProfile.phone;
+          if (existingProfile.dateOfBirth != null) data['dateOfBirth'] = existingProfile.dateOfBirth;
+        }
+        await userRepo.updateUserProfile(userId, data);
+      } catch (_) {}
+    }
     await ref.read(healthProfileProvider.notifier).setHealthProfile(healthProfile);
     if (!mounted) return;
     setState(() => _saving = false);

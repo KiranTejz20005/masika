@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/providers/app_providers.dart';
+
 const _maroon = Color(0xFF6C102C);
 const _bg = Color(0xFFF8F7F5);
 const _bubbleGray = Color(0xFFE8E8E8);
@@ -85,13 +89,13 @@ class _DoctorChatScreenState extends ConsumerState<DoctorChatScreen> {
       appBar: AppBar(
         backgroundColor: _bg,
         elevation: 0,
-        title: const Text(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: _maroon, size: 20),
+          onPressed: () => ref.read(doctorNavIndexProvider.notifier).state = 0,
+        ),
+        title: Text(
           'Chat',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1A1A1A),
-          ),
+          style: AppTypography.screenTitle.copyWith(color: AppColors.textPrimary),
         ),
         centerTitle: true,
       ),

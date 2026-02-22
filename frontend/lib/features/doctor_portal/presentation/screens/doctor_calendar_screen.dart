@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/providers/app_providers.dart';
 
 const _bg = Color(0xFFF8F7F5);
 const _maroon = Color(0xFF8B002B);
@@ -32,14 +37,14 @@ List<({String time, String patient, String reason})> _bookingsFor(DateTime day) 
   return [];
 }
 
-class DoctorCalendarScreen extends StatefulWidget {
+class DoctorCalendarScreen extends ConsumerStatefulWidget {
   const DoctorCalendarScreen({super.key});
 
   @override
-  State<DoctorCalendarScreen> createState() => _DoctorCalendarScreenState();
+  ConsumerState<DoctorCalendarScreen> createState() => _DoctorCalendarScreenState();
 }
 
-class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
+class _DoctorCalendarScreenState extends ConsumerState<DoctorCalendarScreen> {
   late DateTime _focusedMonth;
   DateTime? _selectedDay;
 
@@ -61,13 +66,13 @@ class _DoctorCalendarScreenState extends State<DoctorCalendarScreen> {
       appBar: AppBar(
         backgroundColor: _bg,
         elevation: 0,
-        title: const Text(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: _maroon, size: 20),
+          onPressed: () => ref.read(doctorNavIndexProvider.notifier).state = 0,
+        ),
+        title: Text(
           'Calendar',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1A1A1A),
-          ),
+          style: AppTypography.screenTitle.copyWith(color: AppColors.textPrimary),
         ),
         centerTitle: true,
       ),

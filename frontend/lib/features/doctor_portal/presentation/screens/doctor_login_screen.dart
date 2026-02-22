@@ -21,7 +21,7 @@ class _DoctorLoginScreenState extends ConsumerState<DoctorLoginScreen> {
   bool _rememberMe = false;
   bool _obscurePassword = true;
   bool _isLoading = false;
-  final _emailController = TextEditingController(text: 'doctor@masika.ai');
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   int _tabIndex = 0;
 
@@ -106,34 +106,6 @@ class _DoctorLoginScreenState extends ConsumerState<DoctorLoginScreen> {
     );
   }
 
-  void _openRegister() {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const DoctorRegisterScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          const curve = Curves.easeOutCubic;
-          final tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          final offsetAnimation = animation.drive(tween);
-          final fadeAnimation = CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOut,
-          );
-          return SlideTransition(
-            position: offsetAnimation,
-            child: FadeTransition(
-              opacity: fadeAnimation,
-              child: child,
-            ),
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 350),
-      ),
-    );
-  }
 
   void _returnToPatientLogin() {
     Navigator.of(context).pushAndRemoveUntil(
@@ -266,7 +238,13 @@ class _DoctorLoginScreenState extends ConsumerState<DoctorLoginScreen> {
         children: [
           _buildTabs(),
           const SizedBox(height: 28),
-          _buildForm(),
+          if (_tabIndex == 0)
+            _buildForm()
+          else
+            DoctorRegisterScreen(
+              embedded: true,
+              onBack: () => setState(() => _tabIndex = 0),
+            ),
         ],
       ),
     );
@@ -304,10 +282,7 @@ class _DoctorLoginScreenState extends ConsumerState<DoctorLoginScreen> {
           ),
           Expanded(
             child: GestureDetector(
-              onTap: () {
-                setState(() => _tabIndex = 1);
-                _openRegister();
-              },
+              onTap: () => setState(() => _tabIndex = 1),
               child: Container(
                 decoration: BoxDecoration(
                   color: _tabIndex == 1 ? _maroon : Colors.transparent,

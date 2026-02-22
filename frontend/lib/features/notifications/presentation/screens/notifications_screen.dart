@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/models/app_notification.dart';
 import '../../../../shared/providers/app_providers.dart';
 
@@ -48,13 +50,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           'Notifications',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: _titleColor,
-          ),
+          style: AppTypography.screenTitle.copyWith(color: AppColors.textPrimary),
         ),
         centerTitle: true,
         actions: [

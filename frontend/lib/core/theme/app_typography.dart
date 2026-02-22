@@ -58,6 +58,22 @@ class AppTypography {
     height: 1.3,
   );
   
+  /// Screen / app bar title - Same font as Screening heading (black in theme)
+  static TextStyle get screenTitle => GoogleFonts.plusJakartaSans(
+    fontSize: 18,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.1,
+    height: 1.3,
+  );
+
+  /// Nav bar label - Plus Jakarta Sans, compact, no overflow (FittedBox in shell)
+  static TextStyle get navBarLabel => GoogleFonts.plusJakartaSans(
+    fontSize: 10,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.15,
+    height: 1.2,
+  );
+
   /// Title text styles - Used for card titles, screen titles
   static TextStyle titleLarge = GoogleFonts.plusJakartaSans(
     fontSize: 22,

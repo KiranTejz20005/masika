@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/providers/app_providers.dart';
 import '../../../../shared/providers/cycle_provider.dart';
 import 'cycle_log_screen.dart';
@@ -113,13 +115,9 @@ class _CycleTrackingScreenState extends ConsumerState<CycleTrackingScreen> {
           onPressed: () =>
               ref.read(navIndexProvider.notifier).state = 0,
         ),
-        title: const Text(
+        title: Text(
           'Period Calendar',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: _textDark,
-          ),
+          style: AppTypography.screenTitle.copyWith(color: AppColors.textPrimary),
         ),
         centerTitle: true,
         actions: [
@@ -152,14 +150,6 @@ class _CycleTrackingScreenState extends ConsumerState<CycleTrackingScreen> {
             _buildDailySymptoms(),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CycleLogScreen()),
-        ),
-        backgroundColor: _maroon,
-        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

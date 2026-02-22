@@ -9,6 +9,7 @@ class UserProfile {
     this.email,
     this.phone,
     this.dateOfBirth,
+    this.avatarUrl,
   });
 
   final String id;
@@ -23,6 +24,8 @@ class UserProfile {
   final String? phone;
   /// Birth date from registration, e.g. yyyy-MM-dd (optional).
   final String? dateOfBirth;
+  /// Profile picture URL (e.g. from Supabase Storage).
+  final String? avatarUrl;
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -34,6 +37,7 @@ class UserProfile {
         'email': email,
         'phone': phone,
         'dateOfBirth': dateOfBirth,
+        'avatarUrl': avatarUrl,
       };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
@@ -46,6 +50,7 @@ class UserProfile {
         email: json['email'] as String?,
         phone: json['phone'] as String?,
         dateOfBirth: json['dateOfBirth'] as String?,
+        avatarUrl: json['avatarUrl'] as String?,
       );
 
   UserProfile copyWith({
@@ -58,6 +63,7 @@ class UserProfile {
     String? email,
     String? phone,
     String? dateOfBirth,
+    String? avatarUrl,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -69,6 +75,7 @@ class UserProfile {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
     );
   }
 }

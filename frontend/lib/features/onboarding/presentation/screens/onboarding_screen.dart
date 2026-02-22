@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../data/onboarding_storage.dart';
 import '../../domain/onboarding_model.dart';
 import '../widgets/onboarding_page.dart';
 import '../../../auth/presentation/screens/welcome_screen.dart';
 
-/// 3-screen onboarding per reference: maroon (1–2), teal (3), pixel-perfect layout.
-/// Shown on first launch or after app version bump; then navigates to Welcome.
+/// Onboarding: 4 pages (3 content + 1 swipe-to-complete). Same layout and animations throughout.
+/// Get Started: tap or swipe left on last content page → Welcome. Theme-matched premium look.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -15,12 +17,18 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  static const int _pageCount = 3;
+  static const int _contentPages = 3;
+  static const int _totalPages = 4; // 4th = swipe target, triggers completion
   late final PageController _pageController;
   int _currentPage = 0;
 
-  static const _maroon = Color(0xFF6C102C);
-  static const _tealTop = Color(0xFF8ECFC4);
+  static Color get _maroon => AppColors.primary;
+  static const _teal = Color(0xFF8ECFC4);
+
+  Color get _currentBackgroundColor {
+    if (_currentPage >= _contentPages - 1) return _teal;
+    return _pages[_currentPage].topBackgroundColor;
+  }
 
   static List<OnboardingPageData> get _pages => [
         OnboardingPageData(
@@ -33,7 +41,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           showOverlayButtons: true,
           overlayTopRightIcon: Icons.bar_chart_rounded,
           overlayBottomLeftIcon: Icons.favorite_rounded,
-          illustrationBuilder: (_) => _placeholderIllustration(Icons.face_rounded),
+          illustrationBuilder: (_) => _buildIllustration(Icons.calendar_month_rounded),
         ),
         OnboardingPageData(
           title: 'Expert Consultations',
@@ -41,24 +49,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               'Access a network of specialized gynecologists and health experts from the comfort of your home. Real-time advice, personalized for you.',
           topBackgroundColor: _maroon,
           illustrationBackgroundColor: const Color(0xFFB2DFDB),
-          illustrationBuilder: (_) => _placeholderIllustration(Icons.medical_services_rounded),
+          illustrationBuilder: (_) => _buildIllustration(Icons.medical_services_rounded),
         ),
         OnboardingPageData(
           title: 'Ready to Start?',
           description:
-              'Your personalized wellness journey and AI-powered health insights are just a tap away.',
-          topBackgroundColor: _tealTop,
+              'Your personalized wellness journey and AI-powered health insights are just a tap or swipe away.',
+          topBackgroundColor: _teal,
           illustrationBackgroundColor: const Color(0xFFB2DFDB),
           showOverlayButtons: true,
           overlayTopRightIcon: Icons.favorite_rounded,
           overlayBottomLeftIcon: Icons.psychology_rounded,
-          illustrationBuilder: (_) => _placeholderIllustration(Icons.self_improvement_rounded),
+          illustrationBuilder: (_) => _buildIllustration(Icons.rocket_launch_rounded),
         ),
       ];
 
-  static Widget _placeholderIllustration(IconData icon) {
+  static Widget _buildIllustration(IconData icon) {
     return Center(
-      child: Icon(icon, size: 80, color: Colors.white.withValues(alpha: 0.9)),
+      child: Icon(
+        icon,
+        size: 88,
+        color: Colors.white.withValues(alpha: 0.95),
+      ),
     );
   }
 
@@ -76,12 +88,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _onPageChanged(int index) {
     setState(() => _currentPage = index);
+    if (index == _totalPages - 1) {
+      HapticFeedback.lightImpact();
+      _completeOnboarding();
+    }
   }
 
   void _onNext() {
-    if (_currentPage < _pageCount - 1) {
+    if (_currentPage < _totalPages - 1) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 400),
+        duration: const Duration(milliseconds: 380),
         curve: Curves.easeOutCubic,
       );
     } else {
@@ -101,53 +117,101 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         pageBuilder: (context, animation, secondaryAnimation) =>
             const WelcomeScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
+          return FadeTransition(
+            opacity: CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.03, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+              child: child,
+            ),
+          );
         },
-        transitionDuration: const Duration(milliseconds: 400),
+        transitionDuration: const Duration(milliseconds: 450),
       ),
     );
   }
 
   static const _bottomBg = Color(0xFFF8F7F5);
+  static const _bottomBarMinHeight = 168.0;
 
   @override
   Widget build(BuildContext context) {
-    final isLastPage = _currentPage == _pageCount - 1;
-    final primaryColor = _pages[_currentPage].topBackgroundColor;
+    final isLastContentPage = _currentPage == _contentPages - 1;
+    final primaryColor = _currentPage < _pages.length
+        ? _pages[_currentPage].topBackgroundColor
+        : _teal;
 
-    return Scaffold(
-      backgroundColor: isLastPage ? _tealTop : _pages[_currentPage].topBackgroundColor,
-      body: Column(
-        children: [
-          Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              onPageChanged: _onPageChanged,
-              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-              itemCount: _pageCount,
-              itemBuilder: (context, index) {
-                final data = _pages[index];
-                return OnboardingPageWidget(
-                  key: ValueKey(index),
-                  data: data,
-                  illustrationShape: index == 0
-                      ? OnboardingIllustrationShape.circle
-                      : OnboardingIllustrationShape.roundedRect,
-                );
-              },
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 380),
+      curve: Curves.easeOutCubic,
+      color: _currentBackgroundColor,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Column(
+          children: [
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: _onPageChanged,
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                itemCount: _totalPages,
+                itemBuilder: (context, index) {
+                  final data = _pages[index.clamp(0, _contentPages - 1)];
+                  return OnboardingPageWidget(
+                    key: ValueKey(index),
+                    data: data,
+                    illustrationShape: OnboardingIllustrationShape.roundedRect,
+                  );
+                },
+              ),
             ),
-          ),
-          Container(
-            color: _bottomBg,
-            padding: EdgeInsets.fromLTRB(
-              24,
-              16,
-              24,
-              16 + MediaQuery.paddingOf(context).bottom,
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 320),
+              curve: Curves.easeOutCubic,
+              color: _bottomBg,
+              padding: EdgeInsets.fromLTRB(
+                24,
+                16,
+                24,
+                16 + MediaQuery.paddingOf(context).bottom,
+              ),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: _bottomBarMinHeight),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 320),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, animation) => FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.06),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutCubic,
+                      )),
+                      child: child,
+                    ),
+                  ),
+                  child: isLastContentPage
+                      ? KeyedSubtree(
+                          key: const ValueKey<bool>(true),
+                          child: _buildLastPageActions(primaryColor),
+                        )
+                      : KeyedSubtree(
+                          key: const ValueKey<bool>(false),
+                          child: _buildNormalActions(primaryColor),
+                        ),
+                ),
+              ),
             ),
-            child: isLastPage ? _buildLastPageActions(primaryColor) : _buildNormalActions(primaryColor),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -161,14 +225,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             'Skip',
             style: TextStyle(
               fontSize: 15,
-              color: const Color(0xFF6C6C6C),
+              color: AppColors.textSecondary,
               fontWeight: FontWeight.w500,
             ),
           ),
         ),
         const Spacer(),
         _PageIndicator(
-          pageCount: _pageCount,
+          pageCount: _contentPages,
           currentPage: _currentPage,
           activeColor: primaryColor,
         ),
@@ -181,23 +245,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildLastPageActions(Color primaryColor) {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _PageIndicator(
-          pageCount: _pageCount,
+          pageCount: _contentPages,
           currentPage: _currentPage,
           activeColor: _maroon,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 6),
+        Text(
+          'Swipe left or tap below',
+          style: TextStyle(
+            fontSize: 12,
+            color: AppColors.textTertiary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 14),
         _GetStartedButton(onPressed: _completeOnboarding),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         GestureDetector(
-          onTap: () {}, // Terms link - can wire to terms screen later
+          onTap: () {},
           child: RichText(
             textAlign: TextAlign.center,
             text: TextSpan(
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: Color(0xFFAAAAAA),
+                color: AppColors.textTertiary,
                 fontWeight: FontWeight.w400,
               ),
               children: [
@@ -220,6 +294,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 }
 
 class _GetStartedButton extends StatefulWidget {
+  static const _maroon = Color(0xFF6C102C);
+
   const _GetStartedButton({required this.onPressed});
 
   final VoidCallback onPressed;
@@ -233,13 +309,11 @@ class _GetStartedButtonState extends State<_GetStartedButton>
   late final AnimationController _controller;
   late final Animation<double> _scale;
 
-  static const _maroon = Color(0xFF6C102C);
-
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1800),
       vsync: this,
     )..repeat(reverse: true);
     _scale = Tween<double>(begin: 0.98, end: 1.02).animate(
@@ -262,20 +336,21 @@ class _GetStartedButtonState extends State<_GetStartedButton>
         child: FilledButton(
           onPressed: widget.onPressed,
           style: FilledButton.styleFrom(
-            backgroundColor: _maroon,
+            backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(28),
             ),
             elevation: 2,
+            shadowColor: AppColors.primary.withValues(alpha: 0.35),
           ),
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text('Get Started', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               SizedBox(width: 8),
-              Text('>>>', style: TextStyle(fontSize: 14)),
+              Icon(Icons.arrow_forward_rounded, size: 20),
             ],
           ),
         ),
@@ -302,7 +377,7 @@ class _PageIndicator extends StatelessWidget {
       children: List.generate(pageCount, (index) {
         final isActive = index == currentPage;
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 220),
           margin: const EdgeInsets.symmetric(horizontal: 4),
           width: isActive ? 24 : 8,
           height: 8,

@@ -6,9 +6,17 @@ import 'doctor_shell.dart';
 import 'doctor_login_screen.dart';
 
 /// Pixel-perfect Doctor Registration Screen
-/// Clean design with sections for Personal Details and Professional Credentials
+/// Clean design with sections for Personal Details and Professional Credentials.
+/// When [embedded] is true, renders only the form (no full Scaffold) for same-page use.
 class DoctorRegisterScreen extends ConsumerStatefulWidget {
-  const DoctorRegisterScreen({super.key});
+  const DoctorRegisterScreen({
+    super.key,
+    this.embedded = false,
+    this.onBack,
+  });
+
+  final bool embedded;
+  final VoidCallback? onBack;
 
   @override
   ConsumerState<DoctorRegisterScreen> createState() =>
@@ -20,14 +28,12 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _otpController = TextEditingController();
   final _specializationController = TextEditingController();
   final _expController = TextEditingController();
   final _feeController = TextEditingController();
   final _clinicController = TextEditingController();
   final _timeController = TextEditingController();
 
-  bool _otpVerified = false;
   bool _agreedToTerms = false;
   bool _isSubmitting = false;
 
@@ -48,50 +54,12 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _phoneController.dispose();
-    _otpController.dispose();
     _specializationController.dispose();
     _expController.dispose();
     _feeController.dispose();
     _clinicController.dispose();
     _timeController.dispose();
     super.dispose();
-  }
-
-  void _getOtp() {
-    if (_phoneController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enter phone number first'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('OTP sent (demo)'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _verifyOtp() {
-    if (_otpController.text.trim().length < 4) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enter 4-digit OTP'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-    setState(() => _otpVerified = true);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('OTP Verified'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   Future<void> _register() async {
@@ -131,15 +99,6 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Enter phone number'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-    if (!_otpVerified) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Verify OTP first'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -195,42 +154,78 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
     }
   }
 
+  Widget _buildEmbeddedContent() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(0, 8, 0, 16),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: widget.onBack,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: _maroon),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Back to Login',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: _maroon,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        _buildFormCard(),
+        const SizedBox(height: 24),
+        _buildFooter(),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (widget.embedded) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 24),
+        child: _buildEmbeddedContent(),
+      );
+    }
     return Scaffold(
       backgroundColor: _bg,
-      body: Stack(
-        children: [
-          // Background gradient section
-          _buildTopHeader(),
-          // Main content
-          SafeArea(
-            bottom: false,
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                children: [
-                  _buildBackButton(),
-                  const SizedBox(height: 100),
-                  _buildTitleSubtitle(),
-                  const SizedBox(height: 20),
-                  _buildFormCard(),
-                  const SizedBox(height: 24),
-                  _buildFooter(),
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
+      body: SafeArea(
+        bottom: false,
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              _buildScrollableHeader(),
+              const SizedBox(height: 20),
+              _buildFormCard(),
+              const SizedBox(height: 24),
+              _buildFooter(),
+              const SizedBox(height: 40),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildTopHeader() {
+  /// Red header (gradient, back button, logo, title) — scrolls with the page.
+  Widget _buildScrollableHeader() {
     return Container(
       width: double.infinity,
-      height: 280,
+      padding: const EdgeInsets.only(bottom: 24),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -245,8 +240,8 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
         bottom: false,
         child: Column(
           children: [
-            const SizedBox(height: 60),
-            // Frosted glass circle with stethoscope icon
+            _buildBackButton(),
+            const SizedBox(height: 24),
             Container(
               width: 72,
               height: 72,
@@ -273,6 +268,8 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 20),
+            _buildTitleSubtitle(),
           ],
         ),
       ),
@@ -299,7 +296,13 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
               ],
             ),
             child: InkWell(
-              onTap: () => Navigator.of(context).pop(),
+              onTap: () {
+                if (widget.embedded) {
+                  widget.onBack?.call();
+                } else {
+                  Navigator.of(context).pop();
+                }
+              },
               borderRadius: BorderRadius.circular(20),
               child: const Icon(
                 Icons.arrow_back_ios_new_rounded,
@@ -314,27 +317,30 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
   }
 
   Widget _buildTitleSubtitle() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Join Masika AI',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            color: _maroon,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Join Masika AI',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              color: _white,
+            ),
           ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Create your professional doctor profile',
-          style: TextStyle(
-            fontSize: 15,
-            color: _textGray,
-            fontWeight: FontWeight.w400,
+          const SizedBox(height: 6),
+          Text(
+            'Create your professional doctor profile',
+            style: TextStyle(
+              fontSize: 15,
+              color: _white.withValues(alpha: 0.92),
+              fontWeight: FontWeight.w400,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -378,9 +384,12 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
             obscureText: true,
           ),
           const SizedBox(height: 12),
-          _buildPhoneWithOtp(),
-          const SizedBox(height: 12),
-          _buildOtpWithVerify(),
+          _buildInput(
+            controller: _phoneController,
+            hint: 'Phone Number',
+            icon: Icons.phone_android_outlined,
+            keyboardType: TextInputType.phone,
+          ),
           const SizedBox(height: 24),
           
           // Professional Credentials Section
@@ -423,7 +432,7 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
           ),
           const SizedBox(height: 24),
           
-          // Upload License
+          // Upload License (optional)
           _buildUploadLicense(),
           const SizedBox(height: 20),
           
@@ -447,76 +456,6 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
         color: _labelGray,
         letterSpacing: 0.5,
       ),
-    );
-  }
-
-  Widget _buildPhoneWithOtp() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildInput(
-            controller: _phoneController,
-            hint: 'Phone Number',
-            icon: Icons.phone_android_outlined,
-            keyboardType: TextInputType.phone,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Container(
-          decoration: BoxDecoration(
-            color: _inputBg,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _getOtp,
-              borderRadius: BorderRadius.circular(20),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Text(
-                  'Get OTP',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: _maroon,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildOtpWithVerify() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildInput(
-            controller: _otpController,
-            hint: 'Enter 4-digit OTP',
-            icon: Icons.lock_outline,
-            keyboardType: TextInputType.number,
-          ),
-        ),
-        const SizedBox(width: 12),
-        GestureDetector(
-          onTap: _verifyOtp,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Text(
-              'VERIFY',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: _otpVerified ? Colors.green : _maroon,
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -573,9 +512,12 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
       'Nutritionist',
       'Other'
     ];
-    
+
+    final maxHeight = MediaQuery.of(context).size.height * 0.6;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.paddingOf(context).bottom + 8),
       decoration: const BoxDecoration(
         color: _white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -593,13 +535,22 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          ...specializations.map((spec) => ListTile(
-            title: Text(spec),
-            onTap: () {
-              setState(() => _specializationController.text = spec);
-              Navigator.pop(context);
-            },
-          )),
+          SizedBox(
+            height: (maxHeight - 80).clamp(120.0, double.infinity),
+            child: ListView.builder(
+              itemCount: specializations.length,
+              itemBuilder: (context, index) {
+                final spec = specializations[index];
+                return ListTile(
+                  title: Text(spec),
+                  onTap: () {
+                    setState(() => _specializationController.text = spec);
+                    Navigator.pop(context);
+                  },
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -610,7 +561,7 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
       onTap: () {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Upload Medical License (PDF, JPG up to 5MB)'),
+            content: Text('Upload Medical License (PDF, JPG up to 5MB) – optional'),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -619,10 +570,10 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
         decoration: BoxDecoration(
-          color: _white,
+          color: _inputBg,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: _labelGray.withValues(alpha: 0.2),
+            color: _labelGray.withValues(alpha: 0.25),
             width: 1.5,
             style: BorderStyle.solid,
           ),
@@ -638,7 +589,7 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'Upload Medical License',
+              'Upload Medical License (optional)',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
@@ -647,7 +598,7 @@ class _DoctorRegisterScreenState extends ConsumerState<DoctorRegisterScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'PDF, JPG UP TO 5MB',
+              'PDF, JPG up to 5MB',
               style: TextStyle(
                 fontSize: 12,
                 color: _labelGray,

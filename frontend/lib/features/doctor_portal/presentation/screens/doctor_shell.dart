@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -100,34 +102,40 @@ class _DoctorNavBarState extends State<_DoctorNavBar> {
   @override
   Widget build(BuildContext context) {
     final bottomPad = MediaQuery.paddingOf(context).bottom;
-    const barHeight = 64.0;
+    const barHeight = 78.0;
     const contentHeight = barHeight;
-    
+
     return Padding(
       padding: EdgeInsets.only(left: 14, right: 14, bottom: bottomPad + 10),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
-        child: Container(
-          height: contentHeight,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 2),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            height: contentHeight,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.22),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.5),
+                width: 1.5,
               ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            child: LayoutBuilder(
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 12,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+              child: LayoutBuilder(
               builder: (context, constraints) {
                 final itemWidth = constraints.maxWidth / 5;
-                const circleSize = 44.0;
+                const circleSize = 38.0;
                 final leftOffset = (itemWidth - circleSize) / 2;
-                const innerHeight = contentHeight - 12;
+                const innerHeight = contentHeight - 16;
                 const circleTop = (innerHeight - circleSize) / 2;
                 return Stack(
                   alignment: Alignment.centerLeft,
@@ -180,6 +188,7 @@ class _DoctorNavBarState extends State<_DoctorNavBar> {
           ),
         ),
       ),
+    ),
     );
   }
 }
@@ -207,31 +216,33 @@ class _DoctorNavItem extends StatelessWidget {
         splashColor: _maroon.withValues(alpha: 0.12),
         highlightColor: _maroon.withValues(alpha: 0.06),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 icon,
-                size: 22,
+                size: 20,
                 color: isSelected ? Colors.white : _navInactive,
               ),
-              const SizedBox(height: 3),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? Colors.white : _navInactive,
-                  letterSpacing: 0.2,
-                ),
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: Colors.black,
+                    letterSpacing: 0.2,
+                  ),
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             ],

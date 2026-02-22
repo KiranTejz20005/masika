@@ -20,11 +20,11 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   bool _rememberMe = false;
   bool _obscurePassword = true;
   bool _isLoading = false;
-  final _emailController = TextEditingController(text: 'hello@masika.ai');
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  /// 0 = Login (first), 1 = Register — both show in same page.
   int _tabIndex = 0;
-  bool _isNavigating = false;
 
   // Design reference: deep red/maroon #8C1D3F, white cards, rounded corners throughout
   static const _maroon = Color(0xFF8C1D3F);
@@ -93,11 +93,24 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final message = e.toString().replaceAll('Exception: ', '').trim();
+        final isRegisterFirst = message.toLowerCase().contains('register first');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(
+              isRegisterFirst
+                  ? message
+                  : (message.isEmpty ? 'Login failed. Please try again.' : message),
+            ),
             behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red,
+            backgroundColor: Colors.red.shade700,
+            action: isRegisterFirst
+                ? SnackBarAction(
+                    label: 'Register',
+                    textColor: Colors.white,
+                    onPressed: () => _openRegisterScreen(),
+                  )
+                : null,
           ),
         );
       }
@@ -109,33 +122,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   }
 
   void _openRegisterScreen() {
-    if (_isNavigating) return;
-    _isNavigating = true;
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const RegisterScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          final tween = Tween(begin: begin, end: end).chain(
-            CurveTween(curve: Curves.easeOutCubic),
-          );
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 320),
-      ),
-    ).then((_) {
-      if (mounted) {
-        _isNavigating = false;
-        setState(() {
-          _tabIndex = 0;
-        });
-      }
-    });
+    setState(() => _tabIndex = 1);
   }
 
   void _navigateToDashboard() {
@@ -274,8 +261,24 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildTabs(),
-          const SizedBox(height: 28),
-          _buildLoginForm(),
+          const SizedBox(height: 12),
+          if (_tabIndex == 0) ...[
+            Text(
+              'New user? Register first, then log in with your email and password.',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: _labelGray.withValues(alpha: 0.9),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            _buildLoginForm(),
+          ] else
+            RegisterScreen(
+              embedded: true,
+              onBack: () => setState(() => _tabIndex = 0),
+            ),
         ],
       ),
     );
@@ -313,10 +316,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           ),
           Expanded(
             child: GestureDetector(
-              onTap: () {
-                setState(() => _tabIndex = 1);
-                _openRegisterScreen();
-              },
+              onTap: () => setState(() => _tabIndex = 1),
               child: Container(
                 decoration: BoxDecoration(
                   color: _tabIndex == 1 ? _maroon : Colors.transparent,
@@ -427,7 +427,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           color: _labelGray,
         ),
         decoration: InputDecoration(
-          hintText: 'hello@masika.ai',
+          hintText: 'Enter your registered email',
           hintStyle: TextStyle(
             fontSize: 15,
             color: _labelGray.withValues(alpha: 0.6),

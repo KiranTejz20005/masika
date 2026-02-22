@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'core/localization/app_localizations.dart';
 import 'core/constants/hive_keys.dart';
-import 'core/services/supabase_service.dart';
+import 'core/localization/app_localizations.dart';
 import 'core/services/hive_service.dart';
+import 'core/services/supabase_service.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/analysis_service_check_wrapper.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
 import 'features/onboarding/data/onboarding_storage.dart';
 import 'features/onboarding/presentation/screens/onboarding_screen.dart';
@@ -69,7 +70,7 @@ class _SplashWrapperState extends State<SplashWrapper> {
       navigator.pushReplacement(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
-              const DoctorShell(),
+              const AnalysisServiceCheckWrapper(child: DoctorShell()),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },
@@ -85,7 +86,8 @@ class _SplashWrapperState extends State<SplashWrapper> {
         : const OnboardingScreen();
     navigator.pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => next,
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            AnalysisServiceCheckWrapper(child: next),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },

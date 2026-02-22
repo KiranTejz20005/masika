@@ -352,40 +352,38 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       padding: EdgeInsets.fromLTRB(hp, 0, hp, 20),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        clipBehavior: Clip.none,
         child: Row(
-          children: List.generate(
-            _categories.length,
-            (i) => Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => setState(() => _categoryIndex = i),
-                  borderRadius: BorderRadius.circular(28),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOutCubic,
-                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: _categoryIndex == i ? _maroon : const Color(0xFFF5EFEB),
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: _categoryIndex == i
-                          ? [
-                              BoxShadow(
-                                color: _maroon.withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Center(
-                      child: Text(
-                        _categories[i],
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: _categoryIndex == i ? Colors.white : _maroon,
+          children: [
+            const SizedBox(width: 8),
+            ...List.generate(
+              _categories.length,
+              (i) => Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => setState(() => _categoryIndex = i),
+                    borderRadius: BorderRadius.circular(28),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOutCubic,
+                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: _categoryIndex == i ? _maroon : const Color(0xFFF5EFEB),
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      child: Center(
+                        child: Text(
+                          _categories[i],
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: _categoryIndex == i ? Colors.white : _maroon,
+                          ),
                         ),
                       ),
                     ),
@@ -393,7 +391,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ),
             ),
-          ),
+            const SizedBox(width: 8),
+          ],
         ),
       ),
     );
@@ -434,12 +433,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.85),
+              color: Colors.white.withValues(alpha: 0.45),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.play_arrow_rounded, color: _maroon, size: 40),
+            child: const Icon(Icons.play_arrow_rounded, color: _maroon, size: 28),
           ),
           Positioned(
             left: 16,
@@ -452,7 +451,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _maroon,
+                    color: Colors.black.withValues(alpha: 0.35),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(

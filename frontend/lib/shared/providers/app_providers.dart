@@ -13,6 +13,8 @@ import '../models/order.dart';
 import '../models/appointment.dart';
 import '../models/app_notification.dart';
 import '../models/doctor_profile.dart';
+import '../models/diagnosis_record.dart';
+import '../../backend/services/database_service.dart';
 import '../../features/cycle_tracking/data/cycle_repository.dart';
 import '../../features/health_onboarding/data/health_profile_repository.dart';
 import '../../backend/repositories/user_repository.dart';
@@ -173,6 +175,13 @@ class HealthProfileNotifier extends StateNotifier<UserHealthProfile?> {
   Future<void> _load() async {
     final userId = _ref.read(userProfileProvider)?.id;
     if (userId == null || userId.isEmpty) return;
+    // Prefer Supabase so saved data persists across devices/sessions
+    final remote = await _repo.getRemote(userId);
+    if (remote != null) {
+      state = remote;
+      await _repo.saveLocal(remote);
+      return;
+    }
     final local = await _repo.getLocal(userId);
     state = local;
   }
@@ -307,12 +316,95 @@ final ordersProvider =
 );
 
 class AppointmentNotifier extends StateNotifier<List<Appointment>> {
-  AppointmentNotifier() : super([]);
+  AppointmentNotifier() : super(_loadFromHive());
 
-  void add(Appointment appointment) => state = [...state, appointment];
+  static List<Appointment> _loadFromHive() {
+    try {
+      final raw = HiveService.getValue<dynamic>(HiveKeys.appointments);
+      if (raw == null || raw is! List) return [];
+      return (raw as List)
+          .map((e) => Appointment.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> _persist() async {
+    await HiveService.setValue(
+      HiveKeys.appointments,
+      state.map((a) => a.toJson()).toList(),
+    );
+  }
+
+  void add(Appointment appointment) {
+    state = [...state, appointment];
+    _persist();
+  }
 }
 
 final appointmentsProvider =
     StateNotifierProvider<AppointmentNotifier, List<Appointment>>(
   (ref) => AppointmentNotifier(),
+);
+
+// ═══════════════════════════════════════════════════════════════
+// AI Diagnosis history (from ML backend + Supabase patient_diagnoses)
+// ═══════════════════════════════════════════════════════════════
+
+final diagnosisHistoryProvider =
+    FutureProvider<List<DiagnosisRecord>>((ref) async {
+  final uid = ref.watch(userProfileProvider)?.id;
+  if (uid == null || uid.isEmpty) return [];
+  final list = await DatabaseService().getDiagnoses(uid);
+  return list.map((e) => DiagnosisRecord.fromJson(e)).toList();
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Saved analysis reports (Profile → Reports section)
+// ═══════════════════════════════════════════════════════════════
+
+class SavedReportsNotifier extends StateNotifier<List<DiagnosisRecord>> {
+  SavedReportsNotifier() : super(_load());
+
+  static List<DiagnosisRecord> _load() {
+    final raw = HiveService.getValue<dynamic>(HiveKeys.savedAnalysisReports);
+    if (raw == null || raw is! List) return [];
+    return (raw as List)
+        .map((e) => DiagnosisRecord.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  Future<void> addReport(DiagnosisRecord record) async {
+    final id = record.id ?? DateTime.now().millisecondsSinceEpoch.toString();
+    final createdAt = record.createdAt ?? DateTime.now();
+    final toSave = DiagnosisRecord(
+      id: id,
+      patientId: record.patientId,
+      inputData: record.inputData,
+      prediction: record.prediction,
+      probabilities: record.probabilities,
+      report: record.report,
+      createdAt: createdAt,
+    );
+    state = [toSave, ...state];
+    await _persist();
+  }
+
+  Future<void> removeReport(String id) async {
+    state = state.where((r) => r.id != id).toList();
+    await _persist();
+  }
+
+  Future<void> _persist() async {
+    await HiveService.setValue(
+      HiveKeys.savedAnalysisReports,
+      state.map((r) => r.toJson()).toList(),
+    );
+  }
+}
+
+final savedReportsProvider =
+    StateNotifierProvider<SavedReportsNotifier, List<DiagnosisRecord>>(
+  (ref) => SavedReportsNotifier(),
 );

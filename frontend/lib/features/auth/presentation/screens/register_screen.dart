@@ -5,9 +5,17 @@ import '../../../../shared/providers/app_providers.dart';
 import '../../../dashboard/presentation/screens/dashboard_shell.dart';
 
 /// Pixel-perfect registration screen: Create Your Account with full form,
-/// OTP, date picker; saves data to user profile with smooth animations.
+/// date picker; saves data to user profile with smooth animations.
+/// When [embedded] is true, renders only the form (no Scaffold) for same-page use.
 class RegisterScreen extends ConsumerStatefulWidget {
-  const RegisterScreen({super.key});
+  const RegisterScreen({
+    super.key,
+    this.embedded = false,
+    this.onBack,
+  });
+
+  final bool embedded;
+  final VoidCallback? onBack;
 
   @override
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
@@ -18,11 +26,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _otpControllers = List.generate(4, (_) => TextEditingController());
-  final _otpFocusNodes = List.generate(4, (_) => FocusNode());
-
   bool _obscurePassword = true;
-  bool _otpSent = false;
   bool _isSubmitting = false;
   String? _birthDateStr;
   DateTime? _birthDate;
@@ -41,26 +45,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
-    for (final c in _otpControllers) {
-      c.dispose();
-    }
-    for (final f in _otpFocusNodes) {
-      f.dispose();
-    }
     super.dispose();
-  }
-
-  Future<void> _sendOtp() async {
-    final phone = _phoneController.text.trim();
-    if (phone.isEmpty) {
-      _showSnackBar('Enter phone number first');
-      return;
-    }
-    setState(() => _otpSent = true);
-    _showSnackBar('OTP sent (demo)');
-    if (_otpFocusNodes.first.canRequestFocus) {
-      FocusScope.of(context).requestFocus(_otpFocusNodes[0]);
-    }
   }
 
   void _showSnackBar(String msg) {
@@ -122,15 +107,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       _showSnackBar('Enter your phone number');
       return;
     }
-    if (!_otpSent) {
-      _showSnackBar('Send OTP and verify');
-      return;
-    }
-    final otp = _otpControllers.map((c) => c.text).join();
-    if (otp.length != 4) {
-      _showSnackBar('Enter the 4-digit OTP');
-      return;
-    }
     if (password.length < 6) {
       _showSnackBar('Password must be at least 6 characters');
       return;
@@ -180,7 +156,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSubmitting = false);
-        _showSnackBar(e.toString().replaceAll('Exception: ', ''));
+        final msg = e.toString().replaceAll('Exception: ', '');
+        final lower = msg.toLowerCase();
+        if (lower.contains('email') && (lower.contains('invalid') || lower.contains('email_address_invalid'))) {
+          _showSnackBar('Please enter a valid email address.');
+        } else {
+          _showSnackBar(msg);
+        }
       }
     }
   }
@@ -200,11 +182,47 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   void _goToLogin() {
-    Navigator.of(context).pop();
+    if (widget.embedded) {
+      widget.onBack?.call();
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  Widget _buildFormContent() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: 1),
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOut,
+          builder: (context, value, child) {
+            return Opacity(
+              opacity: value,
+              child: Transform.translate(
+                offset: Offset(0, 8 * (1 - value)),
+                child: child,
+              ),
+            );
+          },
+          child: _buildCard(),
+        ),
+        const SizedBox(height: 20),
+        _buildSecurityBar(),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.embedded) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(0, 12, 0, 20),
+        child: _buildFormContent(),
+      );
+    }
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     return Scaffold(
       backgroundColor: _bg,
@@ -214,29 +232,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           physics: const BouncingScrollPhysics(),
           clipBehavior: Clip.none,
           padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomPadding),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: 1),
-                duration: const Duration(milliseconds: 280),
-                curve: Curves.easeOut,
-                builder: (context, value, child) {
-                  return Opacity(
-                    opacity: value,
-                    child: Transform.translate(
-                      offset: Offset(0, 8 * (1 - value)),
-                      child: child,
-                    ),
-                  );
-                },
-                child: _buildCard(),
-              ),
-              const SizedBox(height: 20),
-              _buildSecurityBar(),
-            ],
-          ),
+          child: _buildFormContent(),
         ),
       ),
     );
@@ -267,7 +263,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           const SizedBox(height: 18),
           _buildEmailField(),
           const SizedBox(height: 18),
-          _buildPhoneAndOtp(),
+          _buildPhoneField(),
           const SizedBox(height: 18),
           _buildPasswordField(),
           const SizedBox(height: 18),
@@ -371,95 +367,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     );
   }
 
-  Widget _buildPhoneAndOtp() {
+  Widget _buildPhoneField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildLabel('PHONE NUMBER'),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: _buildInput(
-                controller: _phoneController,
-                hint: '+1 (555) 000-000',
-                icon: Icons.phone_android_rounded,
-                keyboardType: TextInputType.phone,
-              ),
-            ),
-            const SizedBox(width: 12),
-            SizedBox(
-              height: 52,
-              child: TextButton(
-                onPressed: _otpSent ? null : _sendOtp,
-                style: TextButton.styleFrom(
-                  foregroundColor: _maroon,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text(
-                  'SEND OTP',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-          ],
+        _buildInput(
+          controller: _phoneController,
+          hint: '+1 (555) 000-000',
+          icon: Icons.phone_android_rounded,
+          keyboardType: TextInputType.phone,
         ),
-        if (_otpSent) ...[
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: List.generate(4, (i) {
-              return SizedBox(
-                width: 52,
-                child: TextField(
-                  controller: _otpControllers[i],
-                  focusNode: _otpFocusNodes[i],
-                  keyboardType: TextInputType.number,
-                  maxLength: 1,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: _labelGray,
-                  ),
-                  decoration: InputDecoration(
-                    counterText: '',
-                    filled: true,
-                    fillColor: _inputBg,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 8,
-                    ),
-                  ),
-                  onChanged: (v) {
-                    if (v.length == 1 && i < 3) {
-                      FocusScope.of(context).requestFocus(_otpFocusNodes[i + 1]);
-                    }
-                  },
-                ),
-              );
-            }),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Enter the 4-digit code sent to your phone',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              fontStyle: FontStyle.italic,
-              color: _hintGray,
-            ),
-          ),
-        ],
       ],
     );
   }

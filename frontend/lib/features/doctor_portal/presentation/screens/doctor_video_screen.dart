@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/providers/app_providers.dart';
 import 'upload_video_screen.dart';
 
 const _maroon = Color(0xFF6C102C);
@@ -7,23 +11,23 @@ const _bg = Color(0xFFF8F7F5);
 const _cardBg = Color(0xFFFFFFFF);
 const _sectionGray = Color(0xFF9E9E9E);
 
-class DoctorVideoScreen extends StatelessWidget {
+class DoctorVideoScreen extends ConsumerWidget {
   const DoctorVideoScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(
         backgroundColor: _bg,
         elevation: 0,
-        title: const Text(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: _maroon, size: 20),
+          onPressed: () => ref.read(doctorNavIndexProvider.notifier).state = 0,
+        ),
+        title: Text(
           'Patient Education',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1A1A1A),
-          ),
+          style: AppTypography.screenTitle.copyWith(color: AppColors.textPrimary),
         ),
         centerTitle: true,
       ),

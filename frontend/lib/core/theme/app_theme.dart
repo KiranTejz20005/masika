@@ -35,13 +35,13 @@ class AppTheme {
       // Scaffold
       scaffoldBackgroundColor: AppColors.background,
       
-      // AppBar
+      // AppBar — headings: black, 18, w700 (same as Screening)
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: AppTypography.headlineSmall.copyWith(
+        titleTextStyle: AppTypography.screenTitle.copyWith(
           color: AppColors.textPrimary,
         ),
         systemOverlayStyle: SystemUiOverlayStyle.dark,
@@ -304,7 +304,4 @@ class AppTheme {
       ),
     );
   }
-  
-  /// Dark theme - For future dark mode support; currently mirrors light.
-  static ThemeData get darkTheme => lightTheme;
 }

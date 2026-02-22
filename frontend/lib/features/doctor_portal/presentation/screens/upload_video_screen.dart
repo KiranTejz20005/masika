@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
+
 /// Upload Video Screen - Pixel perfect implementation
 /// Features: Video upload area, title, description, category chips, visibility toggle
 class UploadVideoScreen extends ConsumerStatefulWidget {
@@ -92,13 +95,9 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
           icon: const Icon(Icons.arrow_back, color: _maroon),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           'Upload Video',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: _labelGray,
-          ),
+          style: AppTypography.screenTitle.copyWith(color: AppColors.textPrimary),
         ),
         centerTitle: true,
       ),

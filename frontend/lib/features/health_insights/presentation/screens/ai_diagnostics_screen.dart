@@ -1,7 +1,16 @@
+import 'dart:async';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../backend/services/database_service.dart';
+import '../../../../core/services/ml_backend_service.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/models/diagnosis_record.dart';
 import '../../../../shared/providers/app_providers.dart';
+import 'analysis_result_screen.dart';
 
 /// AI Diagnostics screen: Age & Cycle, Symptoms, Diet, Lab Reports cards,
 /// Analyze Data button. Matches design reference.
@@ -12,10 +21,22 @@ class AiDiagnosticsScreen extends ConsumerStatefulWidget {
   ConsumerState<AiDiagnosticsScreen> createState() => _AiDiagnosticsScreenState();
 }
 
-class _AiDiagnosticsScreenState extends ConsumerState<AiDiagnosticsScreen> {
+class _AiDiagnosticsScreenState extends ConsumerState<AiDiagnosticsScreen>
+    with TickerProviderStateMixin {
   static const _maroon = Color(0xFF6A1A21);
   static const _inputBg = Color(0xFFF5F4F2);
   static const _labelGray = Color(0xFF4B4B4B);
+  bool _isAnalyzing = false;
+  int _analyzingStep = 0;
+  static const _analyzingMessages = [
+    'Analyzing your symptoms...',
+    'Processing cycle data...',
+    'Generating your report...',
+  ];
+  AnimationController? _pulseController;
+  Animation<double>? _pulseAnimation;
+  Timer? _analyzingStepTimer;
+  final _mlService = MlBackendService();
   /// Hint/placeholder text: readable, consistent with labels
   static final _hintStyle = const TextStyle(
     fontSize: 14,
@@ -33,7 +54,6 @@ class _AiDiagnosticsScreenState extends ConsumerState<AiDiagnosticsScreen> {
     borderSide: BorderSide(color: _labelGray.withValues(alpha: 0.12)),
   );
 
-  int _selectedTabIndex = 0;
   int _selectedCategoryIndex = 0;
   final _dietOptions = ['Balanced Diet', 'Veg', 'Junk Food', 'Irregular Meals'];
 
@@ -55,6 +75,9 @@ class _AiDiagnosticsScreenState extends ConsumerState<AiDiagnosticsScreen> {
 
   // Lab (manual)
   final _hemoglobinController = TextEditingController();
+  /// Selected medical PDF from file picker (path for display; extraction can use it later).
+  String? _selectedPdfPath;
+  String? _selectedPdfName;
 
   static const _regularityOptions = ['Regular', 'Irregular', 'Very Irregular'];
   static const _missedPeriodOptions = ['No', 'Yes'];
@@ -70,10 +93,19 @@ class _AiDiagnosticsScreenState extends ConsumerState<AiDiagnosticsScreen> {
     _flowRate = _flowRateOptions.first;
     _bloodClots = _bloodClotsOptions.first;
     _painLevel = _painLevelOptions.first;
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.85, end: 1.15).animate(
+      CurvedAnimation(parent: _pulseController!, curve: Curves.easeInOut),
+    );
   }
 
   @override
   void dispose() {
+    _analyzingStepTimer?.cancel();
+    _pulseController?.dispose();
     _currentAgeController.dispose();
     _ageAtFirstPeriodController.dispose();
     _cycleLengthController.dispose();
@@ -86,22 +118,21 @@ class _AiDiagnosticsScreenState extends ConsumerState<AiDiagnosticsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F7F5),
-      appBar: AppBar(
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: const Color(0xFFF8F7F5),
+          resizeToAvoidBottomInset: true,
+          appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.chevron_left_rounded, color: _maroon),
           onPressed: () => ref.read(navIndexProvider.notifier).state = 0,
         ),
-        title: const Text(
+        title: Text(
           'AI Diagnostics',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: _maroon,
-          ),
+          style: AppTypography.screenTitle.copyWith(color: AppColors.textPrimary),
         ),
         centerTitle: true,
         actions: [
@@ -115,79 +146,51 @@ class _AiDiagnosticsScreenState extends ConsumerState<AiDiagnosticsScreen> {
       ),
       body: Column(
         children: [
-          // Tabs: AI Diagnostics | Comprehensive Data
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
               children: [
-                _TabChip(
-                  label: 'AI Diagnostics',
-                  isActive: _selectedTabIndex == 0,
-                  onTap: () => setState(() => _selectedTabIndex = 0),
+                _SectionCard(
+                  icon: Icons.calendar_today_rounded,
+                  title: 'Age & Cycle',
+                  child: _buildAgeCycleFields(),
                 ),
-                const SizedBox(width: 16),
-                _TabChip(
-                  label: 'Comprehensive Data',
-                  isActive: _selectedTabIndex == 1,
-                  onTap: () => setState(() => _selectedTabIndex = 1),
+                const SizedBox(height: 16),
+                _SectionCard(
+                  icon: Icons.favorite_rounded,
+                  title: 'Symptoms',
+                  child: _buildSymptomsFields(),
+                ),
+                const SizedBox(height: 16),
+                _SectionCard(
+                  icon: Icons.restaurant_rounded,
+                  title: 'Diet',
+                  child: _buildDietChips(),
+                ),
+                const SizedBox(height: 16),
+                _SectionCard(
+                  icon: Icons.biotech_rounded,
+                  title: 'Lab Reports',
+                  child: _buildLabUpload(),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: _selectedTabIndex == 0
-                ? ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                    children: [
-                      _SectionCard(
-                        icon: Icons.calendar_today_rounded,
-                        title: 'Age & Cycle',
-                        child: _buildAgeCycleFields(),
-                      ),
-                      const SizedBox(height: 16),
-                      _SectionCard(
-                        icon: Icons.favorite_rounded,
-                        title: 'Symptoms',
-                        child: _buildSymptomsFields(),
-                      ),
-                      const SizedBox(height: 16),
-                      _SectionCard(
-                        icon: Icons.restaurant_rounded,
-                        title: 'Diet',
-                        child: _buildDietChips(),
-                      ),
-                      const SizedBox(height: 16),
-                      _SectionCard(
-                        icon: Icons.biotech_rounded,
-                        title: 'Lab Reports',
-                        child: _buildLabUpload(),
-                      ),
-                    ],
-                  )
-                : ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                    children: [
-                      _SectionCard(
-                      icon: Icons.dataset_rounded,
-                      title: 'Comprehensive Data',
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Text(
-                          'Additional comprehensive health data entry will be available here.',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: _labelGray.withValues(alpha: 0.9),
-                          ),
-                        ),
-                      ),
-                    ),
-                    ],
-                  ),
-          ),
         ],
       ),
-      bottomSheet: _buildAnalyzeButton(),
+          bottomSheet: _buildAnalyzeButton(),
+        ),
+        if (_isAnalyzing && _pulseAnimation != null) _buildAnalyzingOverlay(),
+      ],
+    );
+  }
+
+  Widget _buildAnalyzingOverlay() {
+    final animation = _pulseAnimation!;
+    return _AnalyzingOverlay(
+      pulseAnimation: animation,
+      step: _analyzingStep,
+      messages: _analyzingMessages,
     );
   }
 
@@ -391,7 +394,56 @@ class _AiDiagnosticsScreenState extends ConsumerState<AiDiagnosticsScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Container(
+        _buildUploadMedicalPdfCard(),
+      ],
+    );
+  }
+
+  Future<void> _pickMedicalPdf() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        allowMultiple: false,
+      );
+      if (!mounted) return;
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.single;
+      final name = file.name.isNotEmpty ? file.name : 'medical.pdf';
+      setState(() {
+        _selectedPdfPath = file.path;
+        _selectedPdfName = name;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Selected: $name'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } on Exception catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to pick file: $e'),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Widget _buildUploadMedicalPdfCard() {
+    final hasFile = _selectedPdfName != null && _selectedPdfName!.isNotEmpty;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _pickMedicalPdf,
+        borderRadius: BorderRadius.circular(16),
+        splashColor: _maroon.withValues(alpha: 0.12),
+        highlightColor: _maroon.withValues(alpha: 0.06),
+        child: Container(
           padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
           decoration: BoxDecoration(
             color: _inputBg,
@@ -404,28 +456,66 @@ class _AiDiagnosticsScreenState extends ConsumerState<AiDiagnosticsScreen> {
           ),
           child: Column(
             children: [
-              Icon(Icons.upload_rounded, color: _maroon, size: 40),
+              Icon(
+                hasFile ? Icons.picture_as_pdf_rounded : Icons.upload_rounded,
+                color: _maroon,
+                size: 40,
+              ),
               const SizedBox(height: 12),
-              const Text(
-                'Upload Medical PDF',
-                style: TextStyle(
+              Text(
+                hasFile ? 'Medical PDF selected' : 'Upload Medical PDF',
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: _maroon,
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                'AI will extract lab values automatically',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: _labelGray.withValues(alpha: 0.8),
+              if (hasFile)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        _selectedPdfName!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: _labelGray.withValues(alpha: 0.9),
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () => setState(() {
+                        _selectedPdfPath = null;
+                        _selectedPdfName = null;
+                      }),
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      color: _maroon,
+                      style: IconButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(32, 32),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Text(
+                  'Tap to choose a PDF — AI will extract lab values',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _labelGray.withValues(alpha: 0.8),
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
             ],
           ),
         ),
-      ],
+      ),
     );
   }
 
@@ -627,6 +717,96 @@ class _AiDiagnosticsScreenState extends ConsumerState<AiDiagnosticsScreen> {
     );
   }
 
+  Future<void> _runPrediction() async {
+    final data = _collectFormData();
+    final features = formToFeatures(data);
+    setState(() {
+      _isAnalyzing = true;
+      _analyzingStep = 0;
+    });
+    _analyzingStepTimer?.cancel();
+    _analyzingStepTimer = Timer.periodic(const Duration(milliseconds: 1200), (_) {
+      if (!mounted || !_isAnalyzing) return;
+      setState(() => _analyzingStep = (_analyzingStep + 1) % _analyzingMessages.length);
+    });
+    try {
+      final result = await _mlService.predict(features, inputData: data);
+      if (!mounted) return;
+      _analyzingStepTimer?.cancel();
+      _analyzingStepTimer = null;
+      setState(() => _isAnalyzing = false);
+
+      final userId = ref.read(userProfileProvider)?.id;
+      if (userId != null && userId.isNotEmpty) {
+        try {
+          await DatabaseService().insertDiagnosis(
+            patientId: userId,
+            inputData: data,
+            prediction: result.prediction,
+            probabilities: result.probabilities,
+          );
+          ref.invalidate(diagnosisHistoryProvider);
+        } catch (_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Result saved locally; sync to cloud may have failed.'),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
+      }
+
+      if (!mounted) return;
+      final record = DiagnosisRecord(
+        prediction: result.prediction,
+        probabilities: result.probabilities,
+        report: result.report,
+        inputData: data,
+        createdAt: DateTime.now(),
+      );
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => AnalysisResultScreen(
+            record: record,
+            showInputSummary: true,
+          ),
+        ),
+      );
+    } on PredictionException catch (e) {
+      if (!mounted) return;
+      _analyzingStepTimer?.cancel();
+      _analyzingStepTimer = null;
+      setState(() => _isAnalyzing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e.toString().contains('SocketException') ||
+              e.toString().contains('Connection refused') ||
+              e.toString().contains('Failed host lookup')
+          ? 'Cannot reach analysis API. Set ML_BACKEND_URL in .env to your API base URL (e.g. https://your-api.com). Add ML_API_KEY if your API requires authentication.'
+          : 'Error: $e';
+      _analyzingStepTimer?.cancel();
+      _analyzingStepTimer = null;
+      setState(() => _isAnalyzing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
+  }
+
   Widget _buildAnalyzeButton() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -636,20 +816,7 @@ class _AiDiagnosticsScreenState extends ConsumerState<AiDiagnosticsScreen> {
           width: double.infinity,
           height: 52,
           child: FilledButton(
-            onPressed: () {
-              final data = _collectFormData();
-              // TODO: send to Supabase when keys are provided
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Data collected. ${data.length} fields ready for analysis.',
-                    ),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              }
-            },
+            onPressed: _isAnalyzing ? null : _runPrediction,
             style: FilledButton.styleFrom(
               backgroundColor: _maroon,
               foregroundColor: Colors.white,
@@ -657,65 +824,31 @@ class _AiDiagnosticsScreenState extends ConsumerState<AiDiagnosticsScreen> {
                 borderRadius: BorderRadius.circular(26),
               ),
             ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Analyze Data',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+            child: _isAnalyzing
+                ? const SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Analyze Data',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(Icons.auto_awesome, size: 18),
+                    ],
                   ),
-                ),
-                SizedBox(width: 8),
-                Icon(Icons.auto_awesome, size: 18),
-              ],
-            ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _TabChip extends StatelessWidget {
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _TabChip({
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  static const _maroon = Color(0xFF6A1A21);
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-              color: isActive ? _maroon : _maroon.withValues(alpha: 0.5),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Container(
-            width: 80,
-            height: 3,
-            decoration: BoxDecoration(
-              color: isActive ? _maroon : Colors.transparent,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -758,10 +891,9 @@ class _SectionCard extends StatelessWidget {
               const SizedBox(width: 10),
               Text(
                 title,
-                style: const TextStyle(
+                style: AppTypography.screenTitle.copyWith(
                   fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: _maroon,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
@@ -769,6 +901,92 @@ class _SectionCard extends StatelessWidget {
           const SizedBox(height: 16),
           child,
         ],
+      ),
+    );
+  }
+}
+
+/// Full-screen overlay shown while analysis is running: pulse animation + cycling messages.
+class _AnalyzingOverlay extends StatelessWidget {
+  const _AnalyzingOverlay({
+    required this.pulseAnimation,
+    required this.step,
+    required this.messages,
+  });
+
+  final Animation<double> pulseAnimation;
+  final int step;
+  final List<String> messages;
+
+  static const _maroon = Color(0xFF6A1A21);
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black54,
+      child: Center(
+        child: AnimatedBuilder(
+          animation: pulseAnimation,
+          builder: (context, _) {
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 32),
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ScaleTransition(
+                    scale: pulseAnimation,
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: _maroon.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.analytics_rounded,
+                        size: 48,
+                        color: _maroon,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(_maroon),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 350),
+                    child: Text(
+                      messages[step.clamp(0, messages.length - 1)],
+                      key: ValueKey<int>(step),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF4B4B4B),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

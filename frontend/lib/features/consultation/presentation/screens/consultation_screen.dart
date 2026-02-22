@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/models/appointment.dart';
 import '../../../../shared/providers/app_providers.dart';
 import '../../domain/specialist_model.dart';
+import 'my_bookings_screen.dart';
 import 'specialist_chat_screen.dart';
 
 // ═══════════════════════════════════════════════════════════════
@@ -259,7 +263,12 @@ class _ConsultationScreenState extends ConsumerState<ConsultationScreen> {
             SliverToBoxAdapter(child: _buildTopRecommendedSection(context)),
             SliverToBoxAdapter(child: _buildNearbySectionHeader(context)),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                0,
+                16,
+                100 + MediaQuery.paddingOf(context).bottom,
+              ),
               sliver: _filteredNearby.isEmpty
                   ? SliverToBoxAdapter(
                       child: Padding(
@@ -323,13 +332,12 @@ class _ConsultationScreenState extends ConsumerState<ConsultationScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Text(
                 'Masika Specialists',
-                style: TextStyle(
+                style: AppTypography.screenTitle.copyWith(
                   fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: _maroon,
+                  color: AppColors.textPrimary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -362,11 +370,11 @@ class _ConsultationScreenState extends ConsumerState<ConsultationScreen> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Container(
-        height: 48,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        height: 54,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
         decoration: BoxDecoration(
           color: _cardBg,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -375,10 +383,11 @@ class _ConsultationScreenState extends ConsumerState<ConsultationScreen> {
             ),
           ],
         ),
+        alignment: Alignment.center,
         child: Row(
           children: [
-            Icon(Icons.search_rounded, size: 22, color: _subtitleGray.withValues(alpha: 0.8)),
-            const SizedBox(width: 12),
+            Icon(Icons.search_rounded, size: 24, color: _subtitleGray.withValues(alpha: 0.8)),
+            const SizedBox(width: 14),
             Expanded(
               child: TextField(
                 controller: _searchController,
@@ -386,15 +395,15 @@ class _ConsultationScreenState extends ConsumerState<ConsultationScreen> {
                 decoration: const InputDecoration(
                   hintText: 'Search specialist, symptom...',
                   hintStyle: TextStyle(
-                    fontSize: 14,
+                    fontSize: 16,
                     color: Color(0xFF9E9E9E),
                     fontWeight: FontWeight.w400,
                   ),
                   border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.zero,
+                  isDense: false,
+                  contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 0),
                 ),
-                style: const TextStyle(fontSize: 14, color: _titleColor),
+                style: const TextStyle(fontSize: 16, color: _titleColor),
                 onSubmitted: (_) => _applyFilter(),
               ),
             ),
@@ -478,7 +487,7 @@ class _ConsultationScreenState extends ConsumerState<ConsultationScreen> {
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (ctx) => SafeArea(
         child: Padding(
@@ -546,7 +555,7 @@ class _ConsultationScreenState extends ConsumerState<ConsultationScreen> {
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (ctx) => SafeArea(
         child: ListView(
@@ -580,7 +589,7 @@ class _ConsultationScreenState extends ConsumerState<ConsultationScreen> {
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (ctx) => SafeArea(
         child: ListView(
@@ -614,17 +623,20 @@ class _ConsultationScreenState extends ConsumerState<ConsultationScreen> {
       MaterialPageRoute(
         builder: (_) => _SeeAllRecommendedScreen(
           specialists: _topRecommended,
-          onBook: (s) => _openBooking(context, s),
+          onBook: (s) => _openBooking(context, s, fromSeeAll: true),
         ),
       ),
     );
   }
 
-  void _openBooking(BuildContext context, Specialist specialist) {
+  void _openBooking(BuildContext context, Specialist specialist, {bool fromSeeAll = false}) {
     HapticFeedback.lightImpact();
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => _SpecialistBookingScreen(specialist: specialist),
+        builder: (_) => _SpecialistBookingScreen(
+          specialist: specialist,
+          fromSeeAll: fromSeeAll,
+        ),
       ),
     );
   }
@@ -663,7 +675,7 @@ class _PremiumSpecialistCard extends StatelessWidget {
       width: width,
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
             color: bg.withValues(alpha: 0.35),
@@ -687,7 +699,7 @@ class _PremiumSpecialistCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(24),
                       ),
                       child: Text(
                         isPremium ? 'PREMIUM CARE' : 'RECOMMENDED',
@@ -726,10 +738,10 @@ class _PremiumSpecialistCard extends StatelessWidget {
                   width: double.infinity,
                   child: Material(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(24),
                     child: InkWell(
                       onTap: onBookPriority,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(24),
                       child: const Padding(
                         padding: EdgeInsets.symmetric(vertical: 14),
                         child: Center(
@@ -755,7 +767,7 @@ class _PremiumSpecialistCard extends StatelessWidget {
             bottom: 0,
             width: 100,
             child: ClipRRect(
-              borderRadius: const BorderRadius.horizontal(right: Radius.circular(20)),
+              borderRadius: const BorderRadius.horizontal(right: Radius.circular(28)),
               child: Image.network(
                 specialist.imageUrl,
                 fit: BoxFit.cover,
@@ -797,7 +809,7 @@ class _NearbySpecialistCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: _cardBg,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.06),
@@ -815,8 +827,7 @@ class _NearbySpecialistCard extends StatelessWidget {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                  ClipOval(
                     child: Image.network(
                       specialist.imageUrl,
                       width: 56,
@@ -916,10 +927,10 @@ class _NearbySpecialistCard extends StatelessWidget {
                   height: 48,
                   child: Material(
                     color: _maroon,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(24),
                     child: InkWell(
                       onTap: onBook,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(24),
                       child: const Center(
                         child: Text(
                           'Book Consultation',
@@ -937,15 +948,15 @@ class _NearbySpecialistCard extends StatelessWidget {
               const SizedBox(width: 12),
               Material(
                 color: _cardBg,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(24),
                 child: InkWell(
                   onTap: onChat,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(24),
                   child: Container(
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: const Color(0xFFE0E0E0)),
                     ),
                     child: const Icon(Icons.chat_bubble_outline_rounded, size: 22, color: _maroon),
@@ -984,13 +995,9 @@ class _SeeAllRecommendedScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: _maroon, size: 20),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           'Top Recommended',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: _titleColor,
-          ),
+          style: AppTypography.screenTitle.copyWith(color: AppColors.textPrimary),
         ),
         centerTitle: true,
       ),
@@ -1016,16 +1023,20 @@ class _SeeAllRecommendedScreen extends StatelessWidget {
 //  Booking screen — slot selection and confirmation
 // ═══════════════════════════════════════════════════════════════
 
-class _SpecialistBookingScreen extends StatefulWidget {
-  const _SpecialistBookingScreen({required this.specialist});
+class _SpecialistBookingScreen extends ConsumerStatefulWidget {
+  const _SpecialistBookingScreen({
+    required this.specialist,
+    this.fromSeeAll = false,
+  });
 
   final Specialist specialist;
+  final bool fromSeeAll;
 
   @override
-  State<_SpecialistBookingScreen> createState() => _SpecialistBookingScreenState();
+  ConsumerState<_SpecialistBookingScreen> createState() => _SpecialistBookingScreenState();
 }
 
-class _SpecialistBookingScreenState extends State<_SpecialistBookingScreen> {
+class _SpecialistBookingScreenState extends ConsumerState<_SpecialistBookingScreen> {
   String? _selectedSlot;
   bool _booked = false;
 
@@ -1039,6 +1050,7 @@ class _SpecialistBookingScreenState extends State<_SpecialistBookingScreen> {
   @override
   Widget build(BuildContext context) {
     final s = widget.specialist;
+    final fromSeeAll = widget.fromSeeAll;
 
     return Scaffold(
       backgroundColor: _bg,
@@ -1047,15 +1059,18 @@ class _SpecialistBookingScreenState extends State<_SpecialistBookingScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: _maroon, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            if (fromSeeAll) {
+              Navigator.of(context).pop();
+              Navigator.of(context).pop();
+            } else {
+              Navigator.of(context).pop();
+            }
+          },
         ),
         title: Text(
           s.name,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: _titleColor,
-          ),
+          style: AppTypography.screenTitle.copyWith(color: AppColors.textPrimary),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -1070,7 +1085,7 @@ class _SpecialistBookingScreenState extends State<_SpecialistBookingScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: _cardBg,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
@@ -1081,8 +1096,7 @@ class _SpecialistBookingScreenState extends State<_SpecialistBookingScreen> {
               ),
               child: Row(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
+                  ClipOval(
                     child: Image.network(
                       s.imageUrl,
                       width: 72,
@@ -1165,7 +1179,7 @@ class _SpecialistBookingScreenState extends State<_SpecialistBookingScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       decoration: BoxDecoration(
                         color: selected ? _maroon : const Color(0xFFF5F3F4),
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(24),
                         border: selected ? null : Border.all(color: const Color(0xFFE0E0E0)),
                       ),
                       child: Text(
@@ -1188,6 +1202,20 @@ class _SpecialistBookingScreenState extends State<_SpecialistBookingScreen> {
                       ? null
                       : () {
                           HapticFeedback.mediumImpact();
+                          final slot = _selectedSlot!;
+                          ref.read(appointmentsProvider.notifier).add(
+                                Appointment(
+                                  id: '${DateTime.now().millisecondsSinceEpoch}_${s.id}',
+                                  doctorId: s.id,
+                                  doctorName: s.name,
+                                  doctorSpecialty: s.specialty,
+                                  timeSlot: slot,
+                                  notes: '',
+                                  bookedAt: DateTime.now(),
+                                  doctorImageUrl: s.imageUrl,
+                                  doctorRating: s.rating,
+                                ),
+                              );
                           setState(() => _booked = true);
                         },
                   style: ElevatedButton.styleFrom(
@@ -1197,7 +1225,7 @@ class _SpecialistBookingScreenState extends State<_SpecialistBookingScreen> {
                     disabledForegroundColor: Colors.grey[500],
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(24),
                     ),
                   ),
                   child: Text(
@@ -1217,7 +1245,7 @@ class _SpecialistBookingScreenState extends State<_SpecialistBookingScreen> {
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE8F5E9),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(28),
                   border: Border.all(color: const Color(0xFF81C784)),
                 ),
                 child: Column(
@@ -1244,18 +1272,38 @@ class _SpecialistBookingScreenState extends State<_SpecialistBookingScreen> {
                     ),
                     const SizedBox(height: 20),
                     SizedBox(
-                      height: 48,
+                      height: 54,
                       width: double.infinity,
                       child: OutlinedButton(
-                        onPressed: () => Navigator.of(context).pop(),
+                        onPressed: () {
+                          final navigator = Navigator.of(context);
+                          if (fromSeeAll) {
+                            navigator.pop();
+                            navigator.pop();
+                          } else {
+                            navigator.pop();
+                          }
+                          navigator.push(
+                            MaterialPageRoute(
+                              builder: (_) => const MyBookingsScreen(),
+                            ),
+                          );
+                        },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF2E7D32),
                           side: const BorderSide(color: Color(0xFF81C784)),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text(
+                          'View Bookings',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        child: const Text('Back to Specialists', style: TextStyle(fontWeight: FontWeight.w600)),
                       ),
                     ),
                   ],
