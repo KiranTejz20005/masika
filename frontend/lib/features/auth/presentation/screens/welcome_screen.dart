@@ -6,6 +6,7 @@ import '../../../../shared/providers/app_providers.dart';
 import '../../../dashboard/presentation/screens/dashboard_shell.dart';
 import '../../../doctor_portal/presentation/screens/doctor_login_screen.dart';
 import 'register_screen.dart';
+import '../../../../core/services/secure_storage_service.dart';
 
 /// Pixel-perfect login screen per design reference.
 /// Top maroon branding, white login card, healthcare professional CTA.
@@ -40,6 +41,22 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   static const _cardRadiusBottom = 28.0;
   static const _inputRadius = 14.0;
   static const _healthcareCardRadius = 24.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final savedEmail = await SecureStorageService.getValue('remember_email');
+    if (savedEmail != null && mounted) {
+      setState(() {
+        _emailController.text = savedEmail;
+        _rememberMe = true;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -116,6 +133,15 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       }
     } finally {
       if (mounted) {
+        setState(() => _isLoading = true); // Set to true to show loading while navigating
+        // If login successful and remember me is checked, save email
+        if (ref.read(isUserLoggedInProvider)) {
+          if (_rememberMe) {
+            await SecureStorageService.setValue('remember_email', email);
+          } else {
+            await SecureStorageService.deleteValue('remember_email');
+          }
+        }
         setState(() => _isLoading = false);
       }
     }
@@ -123,6 +149,70 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
   void _openRegisterScreen() {
     setState(() => _tabIndex = 1);
+  }
+
+  void _showForgotPasswordDialog() {
+    final emailController = TextEditingController(text: _emailController.text);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Forgot Password', style: TextStyle(color: _maroon, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Enter your registered email to receive a password reset link.', style: TextStyle(fontSize: 14)),
+            const SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(
+                color: _inputBg,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  hintText: 'Email Address',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: _labelGray)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final email = emailController.text.trim();
+              if (email.isEmpty) return;
+              
+              Navigator.pop(context);
+              final messenger = ScaffoldMessenger.of(context);
+              try {
+                await ref.read(userRepositoryProvider).sendPasswordReset(email);
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('Password reset link sent to your email')),
+                );
+              } catch (e) {
+                messenger.showSnackBar(
+                  SnackBar(content: Text('Error: ${e.toString()}')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _maroon,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Send Link'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _navigateToDashboard() {
@@ -384,7 +474,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             ),
             const Spacer(),
             GestureDetector(
-              onTap: () {},
+              onTap: _showForgotPasswordDialog,
               child: const Text(
                 'Forgot password?',
                 style: TextStyle(

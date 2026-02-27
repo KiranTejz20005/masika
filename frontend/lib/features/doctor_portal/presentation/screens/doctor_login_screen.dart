@@ -6,6 +6,7 @@ import '../../../../shared/providers/app_providers.dart';
 import 'doctor_shell.dart';
 import 'doctor_register_screen.dart';
 import '../../../auth/presentation/screens/welcome_screen.dart';
+import '../../../../core/services/secure_storage_service.dart';
 
 /// Doctor Portal login: pixel-perfect replica of design reference.
 /// Maroon gradient header with stethoscope, Login/Register tabs, 
@@ -36,6 +37,22 @@ class _DoctorLoginScreenState extends ConsumerState<DoctorLoginScreen> {
   static const _cardRadiusTop = 36.0;
   static const _cardRadiusBottom = 28.0;
   static const _inputRadius = 14.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final savedEmail = await SecureStorageService.getValue('remember_doctor_email');
+    if (savedEmail != null && mounted) {
+      setState(() {
+        _emailController.text = savedEmail;
+        _rememberMe = true;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -95,6 +112,14 @@ class _DoctorLoginScreenState extends ConsumerState<DoctorLoginScreen> {
       }
     } finally {
       if (mounted) {
+        // If login successful and remember me is checked, save email
+        if (ref.read(isDoctorLoggedInProvider)) {
+          if (_rememberMe) {
+            await SecureStorageService.setValue('remember_doctor_email', email);
+          } else {
+            await SecureStorageService.deleteValue('remember_doctor_email');
+          }
+        }
         setState(() => _isLoading = false);
       }
     }
@@ -103,6 +128,70 @@ class _DoctorLoginScreenState extends ConsumerState<DoctorLoginScreen> {
   void _navigateToDoctorPortal() {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const DoctorShell()),
+    );
+  }
+
+  void _showForgotPasswordDialog() {
+    final emailController = TextEditingController(text: _emailController.text);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Forgot Password', style: TextStyle(color: _maroon, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Enter your medical email to receive a password reset link.', style: TextStyle(fontSize: 14)),
+            const SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(
+                color: _inputBg,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  hintText: 'Medical Email Address',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: _labelGray)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final email = emailController.text.trim();
+              if (email.isEmpty) return;
+              
+              Navigator.pop(context);
+              final messenger = ScaffoldMessenger.of(context);
+              try {
+                await ref.read(doctorRepositoryProvider).sendPasswordReset(email);
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('Password reset link sent to your medical email')),
+                );
+              } catch (e) {
+                messenger.showSnackBar(
+                  SnackBar(content: Text('Error: ${e.toString()}')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _maroon,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Send Link'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -353,7 +442,7 @@ class _DoctorLoginScreenState extends ConsumerState<DoctorLoginScreen> {
             ),
             const Spacer(),
             GestureDetector(
-              onTap: () {},
+              onTap: _showForgotPasswordDialog,
               child: const Text(
                 'Forgot password?',
                 style: TextStyle(
