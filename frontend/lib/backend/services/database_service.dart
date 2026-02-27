@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Supabase database: separate tables for patients and doctors.
@@ -9,6 +11,8 @@ class DatabaseService {
   static const String patientsTable = 'patients';
   static const String doctorsTable = 'doctors';
   static const String patientDiagnosesTable = 'patient_diagnoses';
+  static const String doctorVideosTable = 'doctor_videos';
+  static const String appointmentsTable = 'appointments';
 
   SupabaseClient get _client => Supabase.instance.client;
 
@@ -183,5 +187,114 @@ class DatabaseService {
   Future<List<Map<String, dynamic>>> getAllDocuments(String collection) async {
     if (collection == doctorsTable) return getAllDoctors();
     return [];
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  Doctor Videos CRUD (doctor_videos table)
+  // ═══════════════════════════════════════════════════════════════
+
+  /// Insert a new doctor video record.
+  Future<void> insertDoctorVideo({
+    required String doctorId,
+    required String title,
+    String description = '',
+    String category = '',
+    String videoUrl = '',
+    String thumbnailUrl = '',
+    bool isPublic = true,
+  }) async {
+    final row = <String, dynamic>{
+      'doctor_id': doctorId,
+      'title': title,
+      'description': description,
+      'category': category,
+      'video_url': videoUrl,
+      'thumbnail_url': thumbnailUrl,
+      'is_public': isPublic,
+    };
+    await _client.from(doctorVideosTable).insert(row);
+  }
+
+  /// Get all videos for a doctor, newest first.
+  Future<List<Map<String, dynamic>>> getDoctorVideos(String doctorId) async {
+    try {
+      final res = await _client
+          .from(doctorVideosTable)
+          .select()
+          .eq('doctor_id', doctorId)
+          .order('created_at', ascending: false);
+      final list = res as List<dynamic>? ?? [];
+      return list.map((e) => _keysToCamel(Map<String, dynamic>.from(e as Map))).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Delete a doctor video by id.
+  Future<void> deleteDoctorVideo(String videoId) async {
+    await _client.from(doctorVideosTable).delete().eq('id', videoId);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  Booked Patients (for doctor's chat list)
+  // ═══════════════════════════════════════════════════════════════
+
+  /// Get patients who have booked appointments with the given doctor.
+  /// Returns unique patient names/ids from the appointments table.
+  Future<List<Map<String, dynamic>>> getBookedPatients(String doctorId) async {
+    try {
+      final res = await _client
+          .from(appointmentsTable)
+          .select()
+          .eq('doctor_id', doctorId)
+          .order('created_at', ascending: false);
+      final list = res as List<dynamic>? ?? [];
+      // Deduplicate by patient_id
+      final seen = <String>{};
+      final unique = <Map<String, dynamic>>[];
+      for (final e in list) {
+        final map = _keysToCamel(Map<String, dynamic>.from(e as Map));
+        final pid = map['patientId'] as String? ?? '';
+        if (pid.isNotEmpty && seen.add(pid)) {
+          unique.add(map);
+        }
+      }
+      return unique;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  Doctor Profile Image Upload
+  // ═══════════════════════════════════════════════════════════════
+
+  /// Upload a profile image for a doctor and return the public URL.
+  Future<String?> uploadDoctorAvatar(String doctorId, Uint8List fileBytes, String fileName) async {
+    try {
+      final storagePath = 'doctor-avatars/$doctorId/$fileName';
+      await _client.storage.from('avatars').uploadBinary(
+        storagePath,
+        fileBytes,
+        fileOptions: const FileOptions(upsert: true),
+      );
+      final publicUrl = _client.storage.from('avatars').getPublicUrl(storagePath);
+      // Update doctor row with new image URL
+      await _client.from(doctorsTable).update({
+        'profile_image_url': publicUrl,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', doctorId);
+      return publicUrl;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Partial update for a doctor row (snake_case keys).
+  Future<void> updateDoctor(String id, Map<String, dynamic> data) async {
+    if (data.isEmpty) return;
+    final row = Map<String, dynamic>.from(_keysToSnake(data));
+    row['updated_at'] = DateTime.now().toUtc().toIso8601String();
+    await _client.from(doctorsTable).update(row).eq('id', id);
   }
 }

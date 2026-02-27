@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../backend/services/database_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/providers/app_providers.dart';
@@ -11,11 +12,102 @@ const _bg = Color(0xFFF8F7F5);
 const _cardBg = Color(0xFFFFFFFF);
 const _sectionGray = Color(0xFF9E9E9E);
 
-class DoctorVideoScreen extends ConsumerWidget {
+class DoctorVideoScreen extends ConsumerStatefulWidget {
   const DoctorVideoScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DoctorVideoScreen> createState() => _DoctorVideoScreenState();
+}
+
+class _DoctorVideoScreenState extends ConsumerState<DoctorVideoScreen> {
+  List<Map<String, dynamic>> _videos = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVideos();
+  }
+
+  Future<void> _loadVideos() async {
+    final doctor = ref.read(doctorProfileProvider);
+    if (doctor == null || doctor.id.isEmpty) {
+      setState(() => _isLoading = false);
+      return;
+    }
+    try {
+      final videos = await DatabaseService().getDoctorVideos(doctor.id);
+      if (mounted) {
+        setState(() {
+          _videos = videos;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteVideo(String videoId) async {
+    try {
+      await DatabaseService().deleteDoctorVideo(videoId);
+      _loadVideos();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Video deleted'), behavior: SnackBarBehavior.floating),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete: $e'), behavior: SnackBarBehavior.floating),
+        );
+      }
+    }
+  }
+
+  void _showVideoOptions(Map<String, dynamic> video) {
+    final videoId = video['id']?.toString() ?? '';
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Text('Delete Video'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  if (videoId.isNotEmpty) _deleteVideo(videoId);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(
@@ -32,11 +124,10 @@ class DoctorVideoScreen extends ConsumerWidget {
         centerTitle: true,
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+        child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -50,12 +141,14 @@ class DoctorVideoScreen extends ConsumerWidget {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(
+                    onTap: () async {
+                      await Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => const UploadVideoScreen(),
                         ),
                       );
+                      // Refresh list after returning from upload
+                      _loadVideos();
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -83,25 +176,46 @@ class DoctorVideoScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            _EducationListCard(
-              title: 'PCOS Management',
-              views: '8.2k views',
-              imageUrl:
-                  'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=240&fit=crop',
-            ),
-            const SizedBox(height: 12),
-            _EducationListCard(
-              title: 'Prenatal Health',
-              views: '12.5k views',
-              imageUrl:
-                  'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&h=240&fit=crop',
-            ),
-            const SizedBox(height: 12),
-            _EducationListCard(
-              title: 'Holistic Care',
-              views: '5.1k views',
-              imageUrl:
-                  'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400&h=240&fit=crop',
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator(color: _maroon))
+                  : _videos.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.video_library_rounded, size: 64, color: Colors.grey[300]),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No videos yet',
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[500]),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Upload educational videos for your patients.',
+                                  style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                          itemCount: _videos.length,
+                          separatorBuilder: (_, _a) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final v = _videos[index];
+                            return _EducationListCard(
+                              title: v['title'] as String? ?? 'Untitled',
+                              views: v['category'] as String? ?? '',
+                              thumbnailUrl: v['thumbnailUrl'] as String? ?? '',
+                              onMoreTap: () => _showVideoOptions(v),
+                            );
+                          },
+                        ),
             ),
           ],
         ),
@@ -114,12 +228,14 @@ class _EducationListCard extends StatelessWidget {
   const _EducationListCard({
     required this.title,
     required this.views,
-    required this.imageUrl,
+    required this.thumbnailUrl,
+    required this.onMoreTap,
   });
 
   final String title;
   final String views;
-  final String imageUrl;
+  final String thumbnailUrl;
+  final VoidCallback onMoreTap;
 
   @override
   Widget build(BuildContext context) {
@@ -141,14 +257,19 @@ class _EducationListCard extends StatelessWidget {
           SizedBox(
             width: 120,
             height: 88,
-            child: Image.network(
-              imageUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: const Color(0xFFE0E0E0),
-                child: const Icon(Icons.video_library_rounded, size: 40),
-              ),
-            ),
+            child: thumbnailUrl.isNotEmpty
+                ? Image.network(
+                    thumbnailUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: const Color(0xFFE0E0E0),
+                      child: const Icon(Icons.video_library_rounded, size: 40),
+                    ),
+                  )
+                : Container(
+                    color: const Color(0xFFE0E0E0),
+                    child: const Icon(Icons.video_library_rounded, size: 40, color: _maroon),
+                  ),
           ),
           Expanded(
             child: Padding(
@@ -166,15 +287,17 @@ class _EducationListCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    views,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[600],
+                  if (views.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      views,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[600],
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -182,14 +305,7 @@ class _EducationListCard extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.more_vert_rounded),
             color: const Color(0xFF6B6B6B),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Edit or delete video'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
+            onPressed: onMoreTap,
           ),
         ],
       ),

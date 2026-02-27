@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../backend/services/database_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/providers/app_providers.dart';
 
 /// Upload Video Screen - Pixel perfect implementation
 /// Features: Video upload area, title, description, category chips, visibility toggle
@@ -64,24 +66,51 @@ class _UploadVideoScreenState extends ConsumerState<UploadVideoScreen> {
       return;
     }
 
+    final doctor = ref.read(doctorProfileProvider);
+    if (doctor == null || doctor.id.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Doctor profile not found'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isUploading = true);
     
-    // Simulate upload process
-    await Future.delayed(const Duration(seconds: 2));
-    
-    if (!mounted) return;
-    
-    setState(() => _isUploading = false);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Video published successfully!'),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.green,
-      ),
-    );
-    
-    Navigator.of(context).pop();
+    try {
+      await DatabaseService().insertDoctorVideo(
+        doctorId: doctor.id,
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        category: _selectedCategory,
+        isPublic: _isPublic,
+      );
+      
+      if (!mounted) return;
+      
+      setState(() => _isUploading = false);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Video published successfully!'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isUploading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to publish: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override

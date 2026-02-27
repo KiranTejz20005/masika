@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../../../../backend/services/database_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 
@@ -137,6 +139,35 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
     );
   }
 
+  Future<void> _pickAndUploadPhoto(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: source, maxWidth: 512, maxHeight: 512, imageQuality: 80);
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
+      final doctor = ref.read(doctorProfileProvider);
+      if (doctor == null) return;
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Uploading photo...'), behavior: SnackBarBehavior.floating),
+      );
+      final url = await DatabaseService().uploadDoctorAvatar(doctor.id, bytes, 'avatar.jpg');
+      if (url != null && mounted) {
+        final updated = doctor.copyWith(profileImageUrl: url);
+        await ref.read(doctorProfileProvider.notifier).setProfile(updated);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Photo updated!'), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update photo: $e'), behavior: SnackBarBehavior.floating),
+        );
+      }
+    }
+  }
+
   void _showChangePhotoOptions() {
     showModalBottomSheet(
       context: context,
@@ -165,9 +196,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                 title: const Text('Take Photo'),
                 onTap: () {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Camera functionality')),
-                  );
+                  _pickAndUploadPhoto(ImageSource.camera);
                 },
               ),
               ListTile(
@@ -175,9 +204,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                 title: const Text('Choose from Gallery'),
                 onTap: () {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Gallery functionality')),
-                  );
+                  _pickAndUploadPhoto(ImageSource.gallery);
                 },
               ),
               const SizedBox(height: 8),
@@ -275,7 +302,9 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
     final specialty = doctor?.specialty.isNotEmpty == true ? doctor!.specialty.toUpperCase() : 'SPECIALIST';
     final experience = doctor?.experience.isNotEmpty == true ? doctor!.experience : '—';
     final patientsDisplay = '—';
-    final ratingDisplay = '5.0';
+    final ratingDisplay = (doctor?.rating ?? 0) > 0
+        ? doctor!.rating.toStringAsFixed(1)
+        : '—';
 
     return Scaffold(
       backgroundColor: _bg,
@@ -324,6 +353,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
   }
 
   Widget _buildProfileHeader(String name, String specialtyLabel) {
+    final doctor = ref.watch(doctorProfileProvider);
     return Column(
       children: [
         Stack(
@@ -336,11 +366,16 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                 color: const Color(0xFF5BA8B0),
                 shape: BoxShape.circle,
                 border: Border.all(color: _white, width: 3),
-                image: const DecorationImage(
-                  image: NetworkImage('https://randomuser.me/api/portraits/women/44.jpg'),
-                  fit: BoxFit.cover,
-                ),
+                image: (doctor?.profileImageUrl.isNotEmpty == true)
+                    ? DecorationImage(
+                        image: NetworkImage(doctor!.profileImageUrl),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
               ),
+              child: (doctor?.profileImageUrl.isEmpty != false)
+                  ? const Icon(Icons.person, size: 50, color: Colors.white)
+                  : null,
             ),
             Container(
               width: 20,

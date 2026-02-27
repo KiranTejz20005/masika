@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/models/appointment.dart';
 import '../../../../shared/providers/app_providers.dart';
+import '../../../../backend/repositories/doctor_repository.dart';
 import '../../domain/specialist_model.dart';
 import 'my_bookings_screen.dart';
 import 'specialist_chat_screen.dart';
@@ -13,6 +14,7 @@ import 'specialist_chat_screen.dart';
 // ═══════════════════════════════════════════════════════════════
 //  Masika Specialists — Pixel-perfect: app bar, search,
 //  Top Recommended (horizontal), Nearby Specialists (list), booking & chat
+//  Now fetches registered doctors from Supabase
 // ═══════════════════════════════════════════════════════════════
 
 const _maroon = Color(0xFF8D2D3B);
@@ -26,162 +28,7 @@ const _secondaryCardBg = Color(0xFF5C4D7A);
 const _statusGreen = Color(0xFF4CAF50);
 const _starOrange = Color(0xFFFF9800);
 
-/// Top recommended — first card maroon (premium), second card blue/purple.
-final List<Specialist> _topRecommended = [
-  const Specialist(
-    id: 'elena',
-    name: 'Dr. Elena Rodriguez',
-    specialty: 'Fertility & Diagnostics',
-    availabilityLabel: 'Available this week',
-    rating: 4.9,
-    imageUrl: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=face',
-    isPremium: true,
-  ),
-  const Specialist(
-    id: 'maya',
-    name: 'Dr. Maya Thompson',
-    specialty: 'Hormonal Health',
-    availabilityLabel: 'Available today',
-    rating: 4.8,
-    imageUrl: 'https://images.unsplash.com/photo-1594824476967-48c8b964ac31?w=400&h=400&fit=crop&crop=face',
-    isPremium: false,
-  ),
-];
-
-/// Nearby specialists — shown in vertical list.
-final List<Specialist> _nearbySpecialists = [
-  const Specialist(
-    id: 'marcus',
-    name: 'Dr. Marcus Thorne',
-    specialty: 'Diagnostic Radiology',
-    availabilityLabel: 'TODAY, 02:30 PM • 15MINS',
-    rating: 4.9,
-    imageUrl: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200&h=200&fit=crop&crop=face',
-    durationMinutes: 15,
-  ),
-  const Specialist(
-    id: 'amara',
-    name: 'Dr. Amara Singh',
-    specialty: 'Holistic Wellness',
-    availabilityLabel: 'TOMORROW, 09:00 AM',
-    rating: 5.0,
-    imageUrl: 'https://images.unsplash.com/photo-1594824476967-48c8b964ac31?w=200&h=200&fit=crop&crop=face',
-    isOnline: false,
-  ),
-  const Specialist(
-    id: 'julian',
-    name: 'Dr. Julian Vance',
-    specialty: 'Lab Specialist',
-    availabilityLabel: 'TODAY, 05:00 PM',
-    rating: 4.7,
-    imageUrl: 'https://images.unsplash.com/photo-1618499897160-270a2b2ef995?w=200&h=200&fit=crop&crop=face',
-  ),
-  const Specialist(
-    id: 'priya',
-    name: 'Dr. Priya Sharma',
-    specialty: 'Obstetrics & Gynecology',
-    availabilityLabel: 'TODAY, 11:00 AM • 20MINS',
-    rating: 4.8,
-    imageUrl: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=200&h=200&fit=crop&crop=face',
-    durationMinutes: 20,
-  ),
-  const Specialist(
-    id: 'james',
-    name: 'Dr. James Chen',
-    specialty: 'Endocrinology',
-    availabilityLabel: 'TOMORROW, 02:00 PM',
-    rating: 4.9,
-    imageUrl: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200&h=200&fit=crop&crop=face',
-  ),
-  const Specialist(
-    id: 'sophia',
-    name: 'Dr. Sophia Williams',
-    specialty: 'General Practice',
-    availabilityLabel: 'TODAY, 04:00 PM • 15MINS',
-    rating: 4.6,
-    imageUrl: 'https://images.unsplash.com/photo-1594824476967-48c8b964ac31?w=200&h=200&fit=crop&crop=face',
-    durationMinutes: 15,
-  ),
-  const Specialist(
-    id: 'rahul',
-    name: 'Dr. Rahul Kapoor',
-    specialty: 'Fertility & Diagnostics',
-    availabilityLabel: 'WED, 10:00 AM',
-    rating: 5.0,
-    imageUrl: 'https://images.unsplash.com/photo-1618499897160-270a2b2ef995?w=200&h=200&fit=crop&crop=face',
-    isOnline: false,
-  ),
-  const Specialist(
-    id: 'emma',
-    name: 'Dr. Emma Wilson',
-    specialty: 'Hormonal Health',
-    availabilityLabel: 'TODAY, 09:30 AM',
-    rating: 4.7,
-    imageUrl: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=200&h=200&fit=crop&crop=face',
-  ),
-  const Specialist(
-    id: 'david',
-    name: 'Dr. David Kim',
-    specialty: 'Lab Specialist',
-    availabilityLabel: 'TOMORROW, 03:30 PM • 15MINS',
-    rating: 4.8,
-    imageUrl: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200&h=200&fit=crop&crop=face',
-    durationMinutes: 15,
-  ),
-  const Specialist(
-    id: 'olivia',
-    name: 'Dr. Olivia Brown',
-    specialty: 'Diagnostic Radiology',
-    availabilityLabel: 'TODAY, 01:00 PM',
-    rating: 4.5,
-    imageUrl: 'https://images.unsplash.com/photo-1594824476967-48c8b964ac31?w=200&h=200&fit=crop&crop=face',
-    isOnline: false,
-  ),
-  const Specialist(
-    id: 'arjun',
-    name: 'Dr. Arjun Patel',
-    specialty: 'Holistic Wellness',
-    availabilityLabel: 'THU, 11:00 AM',
-    rating: 4.9,
-    imageUrl: 'https://images.unsplash.com/photo-1618499897160-270a2b2ef995?w=200&h=200&fit=crop&crop=face',
-  ),
-  const Specialist(
-    id: 'isabella',
-    name: 'Dr. Isabella Martinez',
-    specialty: 'Obstetrics & Gynecology',
-    availabilityLabel: 'TODAY, 06:00 PM',
-    rating: 4.8,
-    imageUrl: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=200&h=200&fit=crop&crop=face',
-  ),
-  const Specialist(
-    id: 'liam',
-    name: 'Dr. Liam Taylor',
-    specialty: 'Endocrinology',
-    availabilityLabel: 'TOMORROW, 10:00 AM • 20MINS',
-    rating: 4.7,
-    imageUrl: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200&h=200&fit=crop&crop=face',
-    durationMinutes: 20,
-  ),
-  const Specialist(
-    id: 'zara',
-    name: 'Dr. Zara Khan',
-    specialty: 'General Practice',
-    availabilityLabel: 'FRI, 09:00 AM',
-    rating: 4.6,
-    imageUrl: 'https://images.unsplash.com/photo-1594824476967-48c8b964ac31?w=200&h=200&fit=crop&crop=face',
-    isOnline: false,
-  ),
-  const Specialist(
-    id: 'noah',
-    name: 'Dr. Noah Anderson',
-    specialty: 'Fertility & Diagnostics',
-    availabilityLabel: 'TODAY, 03:00 PM',
-    rating: 5.0,
-    imageUrl: 'https://images.unsplash.com/photo-1618499897160-270a2b2ef995?w=200&h=200&fit=crop&crop=face',
-  ),
-];
-
-/// ConsultationScreen = Masika Specialists (Doctor tab). Replaces previous doctor section.
+/// ConsultationScreen = Masika Specialists (Doctor tab). Fetches registered doctors from Supabase.
 class ConsultationScreen extends ConsumerStatefulWidget {
   const ConsultationScreen({super.key});
 
@@ -195,7 +42,11 @@ class _ConsultationScreenState extends ConsumerState<ConsultationScreen> {
   String _query = '';
   String? _filterSpecialty;
   String? _filterAvailability;
-  List<Specialist> _filteredNearby = List<Specialist>.from(_nearbySpecialists);
+
+  List<Specialist> _allDoctors = [];
+  List<Specialist> _topRecommended = [];
+  List<Specialist> _filteredNearby = [];
+  bool _isLoading = true;
 
   static const _specialties = [
     'All',
@@ -219,10 +70,60 @@ class _ConsultationScreenState extends ConsumerState<ConsultationScreen> {
         _applyFilter();
       });
     });
+    _loadRegisteredDoctors();
+  }
+
+  Future<void> _loadRegisteredDoctors() async {
+    try {
+      final doctors = await DoctorRepository().getAllDoctors();
+      final specialists = doctors.map((d) {
+        return Specialist(
+          id: d.id,
+          name: 'Dr. ${d.name}',
+          specialty: d.specialty.isNotEmpty ? d.specialty : 'General Practice',
+          availabilityLabel: 'Available',
+          rating: d.rating > 0 ? d.rating : 4.8,
+          imageUrl: d.profileImageUrl,
+          isPremium: false,
+          isOnline: true,
+        );
+      }).toList();
+
+      if (mounted) {
+        setState(() {
+          _allDoctors = specialists;
+          // First 2 with highest rating or first 2 as top recommended
+          if (specialists.length > 2) {
+            final sorted = List<Specialist>.from(specialists)
+              ..sort((a, b) => b.rating.compareTo(a.rating));
+            _topRecommended = sorted.take(2).map((s) {
+              // Make first one premium
+              final idx = sorted.indexOf(s);
+              return Specialist(
+                id: s.id,
+                name: s.name,
+                specialty: s.specialty,
+                availabilityLabel: s.availabilityLabel,
+                rating: s.rating,
+                imageUrl: s.imageUrl,
+                isPremium: idx == 0,
+                isOnline: s.isOnline,
+              );
+            }).toList();
+          } else {
+            _topRecommended = specialists;
+          }
+          _filteredNearby = List<Specialist>.from(specialists);
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _applyFilter() {
-    var list = List<Specialist>.from(_nearbySpecialists);
+    var list = List<Specialist>.from(_allDoctors);
     if (_query.isNotEmpty) {
       list = list
           .where((Specialist s) =>
@@ -251,6 +152,15 @@ class _ConsultationScreenState extends ConsumerState<ConsultationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: _bg,
+        body: Center(
+          child: CircularProgressIndicator(color: _maroon),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: _bg,
       body: SafeArea(

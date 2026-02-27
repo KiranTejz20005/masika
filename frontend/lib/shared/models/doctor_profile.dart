@@ -9,6 +9,8 @@ class DoctorProfile {
     this.registrationNumber = '',
     this.clinic = '',
     this.experience = '',
+    this.profileImageUrl = '',
+    this.rating = 0.0,
   });
 
   final String id;
@@ -19,6 +21,35 @@ class DoctorProfile {
   final String registrationNumber;
   final String clinic;
   final String experience;
+  final String profileImageUrl;
+  final double rating;
+
+  /// Create a copy with updated fields.
+  DoctorProfile copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? phone,
+    String? specialty,
+    String? registrationNumber,
+    String? clinic,
+    String? experience,
+    String? profileImageUrl,
+    double? rating,
+  }) {
+    return DoctorProfile(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      specialty: specialty ?? this.specialty,
+      registrationNumber: registrationNumber ?? this.registrationNumber,
+      clinic: clinic ?? this.clinic,
+      experience: experience ?? this.experience,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      rating: rating ?? this.rating,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -29,6 +60,8 @@ class DoctorProfile {
         'registrationNumber': registrationNumber,
         'clinic': clinic,
         'experience': experience,
+        'profileImageUrl': profileImageUrl,
+        'rating': rating,
       };
 
   static DoctorProfile fromJson(Map<String, dynamic> json) {
@@ -41,6 +74,8 @@ class DoctorProfile {
       registrationNumber: json['registrationNumber'] as String? ?? '',
       clinic: json['clinic'] as String? ?? '',
       experience: json['experience'] as String? ?? '',
+      profileImageUrl: json['profileImageUrl'] as String? ?? '',
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../backend/services/database_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/providers/app_providers.dart';
@@ -24,12 +25,44 @@ class _DoctorChatScreenState extends ConsumerState<DoctorChatScreen> {
   final _scrollController = ScrollController();
   _ChatPreview? _selectedConversation;
 
-  static const _conversations = [
-    _ChatPreview(name: 'Elena Rodriguez', lastMessage: 'Hello Doctor, I\'ve been feeling some mild fatigue...', time: '10:31 AM', isOnline: true, id: '#MS-992'),
-    _ChatPreview(name: 'Maya Thompson', lastMessage: 'Thank you for the advice on cycle tracking.', time: 'Yesterday', isOnline: false, id: '#MS-1012'),
-    _ChatPreview(name: 'Priya Sharma', lastMessage: 'When can I book a follow-up?', time: 'Yesterday', isOnline: true, id: '#MS-884'),
-    _ChatPreview(name: 'Sophia Williams', lastMessage: 'Received the lab results.', time: 'Mon', isOnline: false, id: '#MS-756'),
-  ];
+  List<_ChatPreview> _conversations = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBookedPatients();
+  }
+
+  Future<void> _loadBookedPatients() async {
+    final doctor = ref.read(doctorProfileProvider);
+    if (doctor == null || doctor.id.isEmpty) {
+      setState(() => _isLoading = false);
+      return;
+    }
+    try {
+      final booked = await DatabaseService().getBookedPatients(doctor.id);
+      final conversations = booked.map((b) {
+        final patientName = b['patientName'] as String? ?? b['patientId'] as String? ?? 'Patient';
+        final patientId = b['patientId'] as String? ?? '';
+        return _ChatPreview(
+          name: patientName,
+          lastMessage: 'Tap to start conversation',
+          time: '',
+          isOnline: false,
+          id: patientId,
+        );
+      }).toList();
+      if (mounted) {
+        setState(() {
+          _conversations = conversations;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -99,20 +132,46 @@ class _DoctorChatScreenState extends ConsumerState<DoctorChatScreen> {
         ),
         centerTitle: true,
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-        itemCount: _conversations.length,
-        itemBuilder: (context, index) {
-          final c = _conversations[index];
-          return _ChatListTile(
-            name: c.name,
-            lastMessage: c.lastMessage,
-            time: c.time,
-            isOnline: c.isOnline,
-            onTap: () => setState(() => _selectedConversation = c),
-          );
-        },
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: _maroon))
+          : _conversations.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.chat_bubble_outline_rounded, size: 64, color: Colors.grey[300]),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No patients have booked yet',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[500]),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Your chat list will appear here when patients book appointments with you.',
+                          style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                  itemCount: _conversations.length,
+                  itemBuilder: (context, index) {
+                    final c = _conversations[index];
+                    return _ChatListTile(
+                      name: c.name,
+                      lastMessage: c.lastMessage,
+                      time: c.time,
+                      isOnline: c.isOnline,
+                      onTap: () => setState(() => _selectedConversation = c),
+                    );
+                  },
+                ),
     );
   }
 
